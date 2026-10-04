@@ -633,6 +633,67 @@ def home():
         "salud_servidor": "/healthz",
         "status": "24/7_ACTIVO_RENDER_CERTIFIED"
     })
+# ================= TRIAL 7 DIAS GRATIS - BASA V7 =================
+@app.route('/trial')
+def trial():
+    return """
+    <html>
+    <head><title>BASA V7 - Trial 7 Días</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body{font-family:Arial;background:#0a192f;color:white;text-align:center;padding:30px}
+        .card{background:white;color:#0a192f;padding:25px;border-radius:15px;max-width:400px;margin:auto}
+        .btn{display:block;background:#00d084;color:white;padding:15px;border-radius:10px;
+             text-decoration:none;font-weight:bold;margin:15px 0;font-size:18px}
+        .btn-bhd{background:#003366}
+        h1{color:#00d084}
+    </style>
+    </head>
+    <body>
+        <h1>🔍 BASA V7</h1>
+        <h2>Prueba 7 Días Gratis</h2>
+        <div class="card">
+            <p><b>Sin tarjeta. Sin compromiso.</b></p>
+            <p>✅ Auditoría forense completa<br>
+               ✅ Detección de anomalías<br>
+               ✅ Reporte DGII automático</p>
+            
+            <a class="btn" href="/api/auth/register?plan=trial">
+                🚀 ACTIVAR MI TRIAL GRATIS
+            </a>
+            
+            <p>¿Listo para pagar?</p>
+            <a class="btn btn-bhd" href="https://bhd.com.do" target="_blank">
+                💳 Pagar al BHD 08694150021<br>
+                <small>RD$7,500 / 30,000 / 75,000</small>
+            </a>
+            
+            <p><small>Trial válido por 7 días. Luego elige tu plan.</small></p>
+        </div>
+    </body>
+    </html>
+    """
+
+@app.route('/api/trial/activar', methods=['POST'])
+def activar_trial():
+    from datetime import datetime, timedelta
+    # Aquí va su lógica de crear usuario trial
+    email = request.json.get('email') if request.is_json else request.args.get('email')
+    expira = datetime.now() + timedelta(days=7)
+    return {
+        "status": "ok",
+        "plan": "TRIAL_7_DIAS",
+        "email": email,
+        "expira": expira.strftime("%Y-%m-%d"),
+        "mensaje": "Trial activado 7 días gratis - BASA V7",
+        "siguiente_paso": "Pagar BHD 08694150021",
+        "planes": {
+            "basico": "RD$7,500",
+            "profesional": "RD$30,000", 
+            "empresarial": "RD$75,000"
+        }
+    }
+# ================= FIN TRIAL =================
 
 if __name__ == "__main__":
     # Render.com inyecta automáticamente la variable PORT
