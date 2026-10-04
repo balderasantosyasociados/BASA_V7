@@ -1,0 +1,10 @@
+flask
+flask-cors
+pandas
+duckdb
+chromadb
+reportlab
+pyjwt
+requests
+gunicorn
+openpyxl
