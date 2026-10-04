@@ -19,6 +19,7 @@ import math
 from functools import wraps
 import pandas as pd
 import duckdb
+from flask import request
 from flask import Flask, request, jsonify, render_template_string, redirect, send_file
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -705,4 +706,38 @@ if __name__ == "__main__":
     print(f"🌐 Portal de 3 Días: http://0.0.0.0:{port}/trial")
     print(f"🩺 Health Check: http://0.0.0.0:{port}/healthz")
     print(f"=======================================================\n")
+# ============ RUTA TRIAL 7 DIAS - LIC PEDRO BALDERA ============
+@app.route('/trial')
+def trial_page():
+    html = """
+    <html><head><meta name='viewport' content='width=device-width,initial-scale=1'>
+    <title>BASA V7 - Trial 7 Dias</title>
+    <style>
+    body{font-family:Arial;background:#0a192f;color:white;text-align:center;padding:20px}
+    .card{background:white;color:#0a192f;padding:25px;border-radius:15px;max-width:420px;margin:20px auto}
+    .btn{display:block;background:#00d084;color:white;padding:16px;border-radius:10px;text-decoration:none;font-weight:bold;margin:15px 0;font-size:18px}
+    .btn-bhd{background:#003366} h1{color:#00d084}
+    </style></head><body>
+    <h1>🔍 BASA V7</h1><h2>Prueba 7 Días Gratis</h2>
+    <div class='card'>
+    <p><b>Sin tarjeta. Sin compromiso.</b></p>
+    <p>✅ Auditoría forense completa<br>✅ Detección anomalías<br>✅ Reporte DGII</p>
+    <a class='btn' href='/'>🚀 ACTIVAR MI TRIAL GRATIS</a>
+    <p><b>¿Listo para pagar?</b></p>
+    <a class='btn btn-bhd' href='https://bhd.com.do' target='_blank'>💳 BHD 08694150021<br><small>RD$7,500 / 30,000 / 75,000</small></a>
+    <p><small>Trial 7 días. Contacto: licpedrobaldera@gmail.com<br>WhatsApp: +18297717390</small></p>
+    </div></body></html>
+    """
+    return render_template_string(html)
+
+@app.route('/api/planes')
+def planes():
+    return jsonify({
+        "basico": {"precio": "RD$7,500", "auditorias": 10},
+        "profesional": {"precio": "RD$30,000", "auditorias": 50},
+        "empresarial": {"precio": "RD$75,000", "auditorias": "ilimitadas"},
+        "bhd_cuenta": "08694150021",
+        "titular": "Pedro Baldera"
+    })
+# ============ FIN TRIAL ============
     app.run(host="0.0.0.0", port=port, debug=False)
