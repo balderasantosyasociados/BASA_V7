@@ -127,6 +127,14 @@ def pendientes():
     return jsonify(pend)
 
 @app.route("/api/admin/activar/<email>", methods=["POST"])
+@app.route("/trial")
+def trial():
+    return render_template_string(TRIAL_HTML)
+
+@app.route("/trial.html")
+def trial_html():
+    return render_template_string(TRIAL_HTML)
+
 def activar(email):
     clientes=get_clientes()
     if email not in clientes: return jsonify({"error":"No existe"}),404
