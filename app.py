@@ -19,7 +19,6 @@ import math
 from functools import wraps
 import pandas as pd
 import duckdb
-from flask import request
 from flask import Flask, request, jsonify, render_template_string, redirect, send_file
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
