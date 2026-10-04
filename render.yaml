@@ -1,0 +1,25 @@
+# ==============================================================================
+# BLUEPRINT OFICIAL PARA RENDER.COM: https://dashboard.render.com/web/srv-db0s008u01pc73bmtl90
+# ==============================================================================
+services:
+  - type: web
+    name: audit-intelligence-basa-v7
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    healthCheckPath: /healthz
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET
+        generateValue: true
+      - key: BHD_CUENTA
+        value: "08694150021"
+      - key: BHD_TITULAR
+        value: "Pedro Baldera"
+      - key: WHATSAPP_ADMIN
+        value: "18297717390"
+      - key: EMAIL_ADMIN
+        value: "licpedrobaldera@gmail.com"
