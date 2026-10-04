@@ -1,1 +1,19 @@
-{}
+{
+  "licpedrobaldera@gmail.com": {
+    "password": "admin",
+    "empresa": "Baldera Santos & Asociados",
+    "plan": "pro",
+    "estado_pago": true,
+    "fecha_registro": "2026-09-01T00:00:00.000000",
+    "creado": "2026-09-01 00:00:00.000000",
+    "activado_por": "Pedro Baldera - 08694150021"
+  },
+  "demo.trial@audit-intelligence-usa.com": {
+    "password": "demo",
+    "empresa": "Auditor Independiente USA",
+    "plan": "trial",
+    "estado_pago": false,
+    "fecha_registro": "2026-10-04T11:00:00.000000",
+    "creado": "2026-10-04 11:00:00.000000"
+  }
+}
