@@ -1,7 +1,7 @@
 # app.py v7.0 FINAL - PEDRO BALDERA - BHD 08694150021
 # CONTACTO: licpedrobaldera@gmail.com - 18297717390
 import os, json, jwt, datetime, glob, requests
-import pandas as pd, duckdb
+import pandas as pd, duckdbt
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import chromadb
@@ -77,7 +77,7 @@ def bhd_info():
     return jsonify({
         "banco":BHD_BANCO, "cuenta":BHD_CUENTA, "titular":BHD_TITULAR, "moneda":"RD$",
         "email":EMAIL_ADMIN, "whatsapp":WHATSAPP_ADMIN, "web":WEBSITE,
-        "precios":{"BASIC":7500,"PRO":30000,"ENTERPRISE":75000}
+        "precios":{"BASIC":13000,"PRO":40000,"ENTERPRISE":90000}
     })
 
 @app.route("/api/pago/subir_comprobante", methods=["POST"])
@@ -91,9 +91,9 @@ def subir_comprobante():
     file.save(filename)
     clientes=get_clientes()
     if user['email'] in clientes:
-        clientes[user['email']]['pago_pendiente']={"plan":plan,"comprobante":filename,"fecha":str(datetime.datetime.now()),"monto":30000 if plan=="PRO" else 7500,"cuenta":f"{BHD_BANCO} {BHD_CUENTA} - {BHD_TITULAR}","estado":"pendiente"}
+        clientes[user['email']]['pago_pendiente']={"plan":plan,"comprobante":filename,"fecha":str(datetime.datetime.now()),"monto":40000 if plan=="PRO" else 13000,"cuenta":f"{BHD_BANCO} {BHD_CUENTA} - {BHD_TITULAR}","estado":"pendiente"}
         save_clientes(clientes)
-    mensaje=f"💰 NUEVO PAGO BHD {BHD_CUENTA}!\n\nCliente: {user['email']}\nPlan: {plan}\nMonto: RD$ {30000 if plan=='PRO' else 7500}\nCuenta: {BHD_BANCO} {BHD_CUENTA} - {BHD_TITULAR}\n\nContacto admin: {EMAIL_ADMIN} - {WHATSAPP_ADMIN}\n\nComprobante: {filename}\nActive en /api/admin/pendientes"
+    mensaje=f"💰 NUEVO PAGO BHD {BHD_CUENTA}!\n\nCliente: {user['email']}\nPlan: {plan}\nMonto: RD$ {40000 if plan=='PRO' else 1300}\nCuenta: {BHD_BANCO} {BHD_CUENTA} - {BHD_TITULAR}\n\nContacto admin: {EMAIL_ADMIN} - {WHATSAPP_ADMIN}\n\nComprobante: {filename}\nActive en /api/admin/pendientes"
     enviar_whatsapp_admin(mensaje)
     return jsonify({"status":"recibido","msg":f"Gracias. Verificaremos su pago a BHD {BHD_CUENTA} y le avisaremos a {EMAIL_ADMIN}. Notificado a {WHATSAPP_ADMIN}."})
 
@@ -138,7 +138,7 @@ def trial_html():
 def activar(email):
     clientes=get_clientes()
     if email not in clientes: return jsonify({"error":"No existe"}),404
-    plan_data=clientes[email].get('pago_pendiente',{}); nuevo_plan=plan_data.get('plan','PRO').lower(); monto=plan_data.get('monto',30000)
+    plan_data=clientes[email].get('pago_pendiente',{}); nuevo_plan=plan_data.get('plan','PRO').lower(); monto=plan_data.get('monto',40000)
     clientes[email]['plan']=nuevo_plan; clientes[email]['pago_pendiente']['estado']='verificado'; clientes[email]['activado_por']=f"{BHD_TITULAR} - {BHD_CUENTA} - {EMAIL_ADMIN}"; clientes[email]['activado_fecha']=str(datetime.datetime.now()); save_clientes(clientes)
     factura_path=generar_factura_bhd(email,nuevo_plan,monto)
     enviar_whatsapp_admin(f"✅ ACTIVADO + FACTURA:\n{email}\nPlan {nuevo_plan.upper()} RD${monto}\nFactura {factura_path}\nBHD {BHD_CUENTA}")
