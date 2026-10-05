@@ -60,7 +60,7 @@ body{background:#0b1120;color:#e2e8f0;font-family:system-ui}
 .modulo-card{border:2px solid #334155;border-radius:10px;padding:10px;margin-bottom:8px;background:#0f172a}
 .modulo-card.activo{border-color:#00d084;background:#0f2a1f}
 .modulo-card.demo{border-color:#f59e0b;background:#2a2210}
-.badge-demo{background:#f59e0b;color:#000}.badge-produccion{background:#00d084;color:#fff}.badge-suspendido{background:#dc2626}
+.badge-demo{background:#f59e0b;color:#000} .badge-produccion{background:#00d084;color:#fff} .badge-suspendido{background:#dc2626}
 input,select{background:#0f172a!important;color:#fff!important;border:1px solid #475569!important;border-radius:8px!important}
 table{font-size:12px}
 </style></head><body>
@@ -99,7 +99,7 @@ table{font-size:12px}
 <div class="mt-2 small text-secondary">Demo: Funciones limitadas, marca agua. Producción pagada: Full sin límites, informes finales, exportación Word/Excel, SHA-256.</div>
 </div>
 <div class="card p-2 mt-2">
-<h6 class="small fw-bold">🔐 Confidencialidad</h6><small class="text-secondary">No se muestra ejercicio programado H_CCRD_3.1 etc a usuarios normales. Solo admin con?admin=1. Cada usuario solo ve su trabajo cargado.</small>
+<h6 class="small fw-bold">🔐 Confidencialidad</h6><small class="text-secondary">No se muestra ejercicio programado H_CCRD_3.1 etc a usuarios normales. Solo admin con ?admin=1. Cada usuario solo ve su trabajo cargado.</small>
 </div>
 </div>
 </div>
@@ -347,4 +347,66 @@ def usuario_rnc(rnc):
         save_json(USERS_FILE,users)
         hist.append({"fecha":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"rnc":rnc,"accion":"Borrado","clave_anterior":u['password_hash'],"clave_nueva":"","admin":"Admin"})
         save_json(HIST_FILE,hist)
-        return jsonify({"msg
+        return jsonify({"msg":f"Usuario {rnc} borrado. Backup guardado {os.path.basename(backup_name)}"})
+    data=request.json
+    if 'empresa' in data: u['empresa']=data['empresa']
+    if 'email' in data: u['email']=data['email']
+    save_json(USERS_FILE,users)
+    hist.append({"fecha":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"rnc":rnc,"accion":"Edición datos","clave_anterior":"","clave_nueva":"","admin":data.get('admin','Admin')})
+    save_json(HIST_FILE,hist)
+    return jsonify({"msg":f"Usuario {rnc} editado. Histórico guardado."})
+
+@app.route('/api/admin/usuarios/<rnc>/clave', methods=['PUT'])
+def cambiar_clave(rnc):
+    users=load_json(USERS_FILE)
+    hist=load_json(HIST_FILE)
+    u=next((x for x in users if x['rnc']==rnc),None)
+    if not u: return jsonify({"msg":"No encontrado"}),404
+    data=request.json
+    anterior=u['password_hash']
+    nueva=sha(data['nueva_clave'])
+    u['password_hash']=nueva
+    save_json(USERS_FILE,users)
+    hist.append({"fecha":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"rnc":rnc,"accion":"Cambio clave admin","clave_anterior":anterior,"clave_nueva":nueva,"admin":data.get('admin','Admin')})
+    save_json(HIST_FILE,hist)
+    return jsonify({"msg":f"Clave de {rnc} cambiada por admin. Histórico privado guardado."})
+
+@app.route('/api/admin/usuarios/<rnc>/suspender', methods=['PUT'])
+def suspender(rnc):
+    users=load_json(USERS_FILE)
+    hist=load_json(HIST_FILE)
+    u=next((x for x in users if x['rnc']==rnc),None)
+    if not u: return jsonify({"msg":"No encontrado"}),404
+    u['estado']='suspendido' if u['estado']=='activo' else 'activo'
+    save_json(USERS_FILE,users)
+    hist.append({"fecha":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"rnc":rnc,"accion":f"Cambio estado a {u['estado']}","clave_anterior":"","clave_nueva":"","admin":"Admin"})
+    save_json(HIST_FILE,hist)
+    return jsonify({"msg":f"Usuario {rnc} ahora {u['estado']}"})
+
+@app.route('/api/admin/historico_claves')
+def historico():
+    return jsonify(load_json(HIST_FILE))
+
+@app.route('/api/admin/backup')
+def backup():
+    # backup completo todo
+    timestamp=datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_file=os.path.join(BACKUP_DIR,f"backup_FULL_{timestamp}.json")
+    data={"usuarios":load_json(USERS_FILE),"historico_claves_privado":load_json(HIST_FILE),"pagos_mensuales":load_json(PAGOS_FILE),"modulos":MODULOS,"fecha_backup":datetime.now().isoformat(),"admin":"BASA V20 FULL ADMIN"}
+    with open(backup_file,'w',encoding='utf-8') as fh: json.dump(data,fh,indent=2,ensure_ascii=False)
+    return send_file(backup_file, as_attachment=True, download_name=f"BACKUP_FULL_ADMIN_{timestamp}.json")
+
+@app.route('/export/reporte/<mod_id>')
+def reporte_mod(mod_id):
+    m=next((x for x in MODULOS if x['id']==mod_id),None)
+    if not m: return "Modulo no encontrado",404
+    path=os.path.join(DATA_DIR,f"Reporte_{mod_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+    with open(path,'w',encoding='utf-8') as f:
+        f.write(f"REPORTE {m['id']} - {m['nombre']}\nFunciones: {', '.join(m['funciones'])}\nReporte: {m['reporte']}\nFecha: {datetime.now()}\nBHD 08694150021\n")
+    return send_file(path, as_attachment=True)
+
+@app.route('/demo')
+def demo(): return jsonify({"sistema":"BASA V20 FULL ADMIN","modulos":len(MODULOS),"precio":"USD250 x modulo","total_DO":"USD3835/mes","backup":"/api/admin/backup","admin_endpoints":["/api/admin/usuarios","/api/admin/historico_claves","/api/admin/backup"]})
+
+if __name__=='__main__':
+    app.run(host='0.0.0.0',port=int(os.environ.get('PORT',5000)))
