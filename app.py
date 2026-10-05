@@ -4,6 +4,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 app.secret_key = "BASA_V10_FINAL_FULL_NO_ERROR"
 CORS(app)
+@app.route('/prueba-online')
+def prueba_online():
+    return render_template_string(INDEX_HTML)
 
 BHD_CUENTA = "08694150021 - USD Y DOP"
 STRIPE_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
