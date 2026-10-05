@@ -1,0 +1,25 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BASA V14 FIX 404 - Trial</title><style>body{font-family:Arial;background:#0f172a;color:white;margin:0;padding:0}.hero{background:linear-gradient(135deg,#003366,#00d084);padding:30px;text-align:center}.card{background:white;color:#0f172a;padding:20px;border-radius:16px;max-width:1000px;margin:20px auto}.btn{padding:12px;border-radius:8px;font-weight:bold;border:none;margin:5px;display:inline-block;text-decoration:none}.verde{background:#00d084;color:white}.azul{background:#003366;color:white}input,select{width:100%;padding:10px;border:2px solid #cbd5e1;border-radius:8px;margin:5px 0}</style></head><body>
+<div class="hero"><h1>AUDIT INTELLIGENCE USA - FIX 404 DEFINITIVO</h1><p id="ruta">Cargando...</p><p>Backend: basa-v7-1.onrender.com | Frontend: audit-intelligence-usa.com</p></div>
+<div class="card">
+<h2>Trial - Registro SaaS</h2>
+<form id="auditSaaSForm" onsubmit="return integrarCliente(event)">
+<label>Empresa:</label><input id="empresa" required><label>RNC:</label><input id="rnc" required><label>Email Corporativo:</label><input id="email" type="email" required>
+<label>Pais:</label><select id="pais"><option value="DO">DO - NOBACI</option><option value="US">US - FAR</option><option value="MX">MX</option></select>
+<label><input type="checkbox" id="aceptaContrato" required style="width:20px;height:20px"> Acepto Contrato SaaS BASA Ley 126-02 + ESIGN + eIDAS</label>
+<button type="submit" class="btn verde" style="width:100%">Activar Cuenta y Acceder</button>
+</form>
+<div id="res" style="display:none;margin-top:12px"></div>
+<div style="margin-top:15px"><a href="/trial" class="btn azul">/trial FIX 200</a><a href="https://basa-v7-1.onrender.com/gestion-informes" target="_blank" class="btn verde">Gestion Informes + Replicas + Historial</a></div>
+</div>
+<script>
+document.getElementById('ruta').innerText='Ruta: '+window.location.pathname+' - FIX 200 OK';
+function integrarCliente(e){
+ e.preventDefault();
+ var empresa=document.getElementById('empresa').value, rnc=document.getElementById('rnc').value, email=document.getElementById('email').value, pais=document.getElementById('pais').value;
+ fetch('https://basa-v7-1.onrender.com/api/activar-saas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:empresa,rnc:rnc,email:email,pais:pais,mods:['B4_BASE','M9_NOBACI','M11_PAGOS','M10_INV']})}).then(r=>r.json()).then(d=>{
+  var res=document.getElementById('res');res.style.display='block';
+  res.innerHTML='<h3 style="color:#00a86b">Registro exitoso '+empresa+' Contrato '+d.contrato+'</h3><a href="https://basa-v7-1.onrender.com/api/contrato/'+d.contrato+'" target="_blank" class="btn verde">Descargar Contrato PDF Real Funcional</a><a href="https://basa-v7-1.onrender.com/gestion-informes" target="_blank" class="btn azul">Gestion Informes y Replicas</a>';
+ });
+ return false;
+}
+</script></body></html>
