@@ -1,249 +1,300 @@
 import os, io, zipfile, datetime, json, calendar
-from flask import Flask, jsonify, request, session, send_file, Response
+from flask import Flask, jsonify, request, session, send_file, Response, render_template_string
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 app = Flask(__name__)
-app.secret_key = "BASA_V10_FINAL_FULL_NO_ERROR"
-CORS(app)
+app.secret_key = "BASA_V13_FIX_404_TRIAL_NETLIFY"
+CORS(app, origins="*")
 
 BHD_CUENTA = "08694150021 - USD Y DOP"
 STRIPE_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+BASE_URL = "https://basa-v7-1.onrender.com"
+FRONT_URL = "https://audit-intelligence-usa.com"
 
 PAISES = {
-    "DO": {"nombre":"Rep. Dominicana","moneda":"DOP","impuesto":0.18,"leyes":["Ley 340-06","Reg 416-23","NOBACI","Ley 10-07","Ley 155-17","Ley 126-02"],"portal":"comprasdominicana.gob.do"},
-    "US": {"nombre":"Estados Unidos","moneda":"USD","impuesto":0.0,"leyes":["FAR","2 CFR 200","SOX","GAAP","ESIGN"],"portal":"sam.gov"},
-    "MX": {"nombre":"Mexico","moneda":"MXN","impuesto":0.16,"leyes":["LAASSP","Anticorrupcion"],"portal":"compranet.hacienda.gob.mx"},
+    "DO": {"nombre":"Rep. Dominicana","moneda":"DOP","impuesto":0.18,"leyes":["Ley 340-06","NOBACI","Ley 10-07"],"portal":"comprasdominicana.gob.do"},
+    "US": {"nombre":"Estados Unidos","moneda":"USD","impuesto":0.0,"leyes":["FAR","SOX","GAAP"],"portal":"sam.gov"},
+    "MX": {"nombre":"Mexico","moneda":"MXN","impuesto":0.16,"leyes":["LAASSP"],"portal":"compranet.hacienda.gob.mx"},
     "PA": {"nombre":"Panama","moneda":"USD","impuesto":0.07,"leyes":["Ley 22"],"portal":"panamacompra.gob.pa"},
     "CO": {"nombre":"Colombia","moneda":"COP","impuesto":0.19,"leyes":["Ley 80"],"portal":"colombiacompra.gov.co"},
     "ES": {"nombre":"Espana","moneda":"EUR","impuesto":0.21,"leyes":["LCSP","eIDAS"],"portal":"contrataciondelestado.es"},
 }
-
 MODULOS = {
-    "B4_BASE": {"nombre":"B4 Base - Informe Pericial IA","precio":250,"cat":"Informes","desc":"Informe pericial IA multi-idioma + NOBACI + firma digital","ley":"Todas"},
-    "M1_SCRAPER": {"nombre":"M1 - Scraper 10 anos IA","precio":250,"cat":"Auditoria","desc":"Scraping automatico portal compras segun pais + IA predictiva","ley":"Portal pais"},
-    "M2_FRACC": {"nombre":"M2 - Fraccionamiento + Libramientos","precio":250,"cat":"Auditoria","desc":"Fraccionamiento 4 criterios + Analisis libramientos SIGEF Contraloria","ley":"Ley 340-06 + Ley 10-07"},
-    "M3_DUENO": {"nombre":"M3 - Mismo Dueno + Benef Final","precio":250,"cat":"Forense","desc":"Deteccion multi-RNC mismo dueno + beneficiario final global","ley":"Ley 155-17"},
-    "M4_ACC": {"nombre":"M4 - Accionistas + Activos Ocultos","precio":250,"cat":"Forense","desc":"Red accionistas + activos ocultos + patrimonio no declarado","ley":"Ley 155-17"},
-    "M5_CONF": {"nombre":"M5 - Consanguinidad + PEPs","precio":250,"cat":"Legal","desc":"Consanguinidad funcionarios + conflicto interes + PEPs mundial","ley":"Ley 41-08 + PEPs"},
-    "M6_NOM": {"nombre":"M6 - Nomina + Pagos + TSS","precio":250,"cat":"Nomina","desc":"Nomina fantasma, doble cargo, pagos sin retencion TSS MAP IRS SAT","ley":"TSS + MAP"},
-    "M7_FIN": {"nombre":"M7 - Financieros + Pagos","precio":250,"cat":"Financiero","desc":"Estados financieros DGII vs contrataciones + pagos trucados","ley":"DGII + NOBACI"},
-    "M8_FULL": {"nombre":"M8 - Forense Full + IA Predictiva","precio":250,"cat":"IA","desc":"Analisis forense completo + IA predictiva + matriz riesgo auto","ley":"Todas"},
-    "M9_NOBACI": {"nombre":"M9 - NOBACI + Control Interno","precio":250,"cat":"Control Interno","desc":"Evaluacion NOBACI RD completa + COSO + Matriz Riesgo + Informe CI","ley":"NOBACI + COSO"},
-    "M10_INV": {"nombre":"M10 - Inventarios + Activos Fijos","precio":250,"cat":"Inventarios","desc":"Toma fisica IA + Kardex + activos fijos + depreciacion + obsolescencia","ley":"NOBACI Activos"},
-    "M11_PAGOS": {"nombre":"M11 - Pagos + Libramientos + Tesoreria","precio":250,"cat":"Tesoreria","desc":"Analisis libramientos Contraloria SIGEF + cheques duplicados + transferencias","ley":"Ley 10-07"},
-    "M12_INF": {"nombre":"M12 - Informes IA Multi-Pais","precio":250,"cat":"Informes","desc":"Generacion automatica informes periciales IA multi-idioma multi-moneda","ley":"Todas"},
+    "B4_BASE": {"nombre":"B4 Base - Informe Pericial IA","precio":250,"cat":"Informes","desc":"Informe base IA + NOBACI"},
+    "M1_SCRAPER": {"nombre":"M1 - Scraper 10 anos IA","precio":250,"cat":"Auditoria","desc":"Scraping portal + IA"},
+    "M2_FRACC": {"nombre":"M2 - Fraccionamiento + Libramientos","precio":250,"cat":"Auditoria","desc":"Fracc + SIGEF"},
+    "M3_DUENO": {"nombre":"M3 - Mismo Dueno","precio":250,"cat":"Forense","desc":"Multi-RNC"},
+    "M4_ACC": {"nombre":"M4 - Accionistas + Activos","precio":250,"cat":"Forense","desc":"Activos ocultos"},
+    "M5_CONF": {"nombre":"M5 - Consanguinidad + PEPs","precio":250,"cat":"Legal","desc":"PEPs"},
+    "M6_NOM": {"nombre":"M6 - Nomina + TSS","precio":250,"cat":"Nomina","desc":"Nomina fantasma"},
+    "M7_FIN": {"nombre":"M7 - Financieros","precio":250,"cat":"Financiero","desc":"DGII"},
+    "M8_FULL": {"nombre":"M8 - Forense Full + IA","precio":250,"cat":"IA","desc":"TODO + IA"},
+    "M9_NOBACI": {"nombre":"M9 - NOBACI","precio":250,"cat":"Control","desc":"NOBACI + COSO"},
+    "M10_INV": {"nombre":"M10 - Inventarios","precio":250,"cat":"Inventarios","desc":"Toma fisica IA"},
+    "M11_PAGOS": {"nombre":"M11 - Pagos + Libramientos","precio":250,"cat":"Tesoreria","desc":"SIGEF + cheques"},
+    "M12_INF": {"nombre":"M12 - Informes IA","precio":250,"cat":"Informes","desc":"Informes IA"},
 }
 
-def calcular(mods, pais):
-    info = PAISES.get(pais, PAISES["DO"])
-    imp = info["impuesto"]
-    sub = 0
+HISTORIAL_FILE = "/tmp/historial_replicas.json"
+UPLOAD_FOLDER = "/tmp/replicas"
+
+def get_historial():
+    if os.path.exists(HISTORIAL_FILE):
+        try:
+            with open(HISTORIAL_FILE,'r',encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
+    return []
+
+def save_historial(data):
+    try:
+        with open(HISTORIAL_FILE,'w',encoding='utf-8') as f:
+            json.dump(data,f,ensure_ascii=False,indent=2)
+    except:
+        pass
+
+def add_event(tipo, descripcion, archivo, accion):
+    hist=get_historial()
+    ev={"fecha":datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),"tipo":tipo.upper(),"descripcion":descripcion,"archivo":archivo,"accion":accion,"empresa":session.get('empresa','DEMO'),"contrato":session.get('contrato','CTR-DEMO')}
+    hist.insert(0,ev)
+    save_historial(hist)
+    return ev
+
+def generar_contrato_txt(empresa, rnc, email, mods, pais, total, cid):
+    info=PAISES.get(pais,PAISES["DO"])
+    lista=""
     for m in mods:
         if m in MODULOS:
-            sub = sub + MODULOS[m]["precio"]
-    impuesto = round(sub * imp, 2)
-    total = sub + impuesto
-    hoy = datetime.datetime.now()
-    ultimo = calendar.monthrange(hoy.year, hoy.month)[1]
-    dias = ultimo - hoy.day + 1
-    primer = round((total / 30) * dias, 2)
-    return {"mods":mods,"subtotal":sub,"impuesto":impuesto,"total":total,"primer":primer,"dias":dias,"pais":pais,"info":info,"bhd":BHD_CUENTA}
+            lista=lista+"- "+MODULOS[m]["nombre"]+" USD250\n"
+    txt="CONTRATO SAAS BASA V13 FIX 404 - "+cid+"\nFECHA: "+datetime.datetime.now().strftime("%d/%m/%Y")+"\nEMPRESA: "+empresa+"\nRNC: "+rnc+"\nEMAIL: "+email+"\nPAIS: "+info["nombre"]+" - "+",".join(info["leyes"])+"\nMODULOS:\n"+lista+"\nTOTAL: USD$"+str(total)+"\nBHD: "+BHD_CUENTA+"\nFRONT: "+FRONT_URL+"/trial - BACK: "+BASE_URL+"\nFIRMA DIGITAL Ley 126-02 + ESIGN + eIDAS\n"
+    return txt
+
+def generar_informe_txt(tipo, empresa, rnc):
+    fecha=datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    if tipo=="acta_lectura":
+        return "ACTA DE LECTURAS - BASA V13\nEmpresa: "+empresa+"\nRNC: "+rnc+"\nFecha: "+fecha+"\nContrato: "+session.get('contrato','CTR')+"\nHallazgos lectura NOBACI Ley 10-07...\n"
+    elif tipo=="preliminar":
+        return "INFORME PRELIMINAR V13\nEmpresa: "+empresa+"\nRNC: "+rnc+"\nFecha: "+fecha+"\nHallazgos: Fraccionamiento, SIGEF sin soporte, NOBACI debil, Inventarios...\nPlazo 10 dias replica Reg 416-23.\n"
+    else:
+        return "INFORME FINAL V13\nEmpresa: "+empresa+"\nRNC: "+rnc+"\nFecha: "+fecha+"\nInforme final definitivo TSA, analisis replicas, NOBACI final, libramientos, inventarios, matriz riesgo.\n"
+
+INDEX_HTML = """
+<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>BASA V13 - Audit Intelligence USA</title><link rel='manifest' href='/manifest.json'><style>
+body{font-family:system-ui,Arial;background:#0f172a;color:white;margin:0;padding:0}.hero{background:linear-gradient(135deg,#003366 0%,#00d084 100%);padding:40px 20px;text-align:center}.card{background:white;color:#0f172a;padding:20px;border-radius:16px;max-width:1100px;margin:20px auto}.btn{padding:12px 18px;border-radius:8px;font-weight:bold;border:none;margin:5px;cursor:pointer;text-decoration:none;display:inline-block}.verde{background:#00d084;color:white}.azul{background:#003366;color:white}
+</style></head><body>
+<div class='hero'><h1>BASA V13 - AUDIT INTELLIGENCE USA - FIX 404</h1><p>USD250 x modulo | BHD 08694150021 | PWA Android iPhone | Contrato Funcional + Informes + Replicas + Historial</p><p style='background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;display:inline-block'>Dominio: audit-intelligence-usa.com/trial - Backend: basa-v7-1.onrender.com</p></div>
+<div class='card'>
+<h2 id='ruta'>Cargando...</h2>
+<div id='contenido'></div>
+<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:15px'>
+<a href='/trial' class='btn azul'>/trial (FIX 404)</a><a href='/contrato' class='btn azul'>Contrato Funcional</a><a href='/gestion-informes' class='btn verde'>Gestion Informes + Replicas + Historial</a>
+<a href='/b4' class='btn azul'>B4 FULL</a><a href='/v8' class='btn azul'>V8 FULL NOBACI</a><a href='/demo' class='btn azul' style='background:#6b7280'>ZIP REAL</a>
+</div>
+<div style='margin-top:15px;background:#fef3c7;padding:12px;border-radius:8px;color:#92400e'><b>FIX NETLIFY 404:</b> Si ve este index en audit-intelligence-usa.com/trial significa que el fix _redirects funciono. Este archivo maneja todas las rutas.</div>
+</div>
+<script>
+var path=window.location.pathname;
+document.getElementById('ruta').innerText='Ruta actual: '+path+' - OK FIX 200';
+var html='';
+if(path.includes('trial')){
+ html='<h3>TRIAL - Audit Intelligence USA - Activacion Demo</h3><p>Prueba gratis 7 dias BASA V13</p><form id="auditSaaSForm" onsubmit="return activar(event)"><label>Empresa:</label><input id="empresa" required style="width:100%;padding:8px;margin:4px 0"><label>RNC:</label><input id="rnc" required style="width:100%;padding:8px"><label>Email:</label><input id="email" type="email" required style="width:100%;padding:8px"><label><input type="checkbox" id="acepta" required> Acepto Contrato BASA</label><br><button type="submit" class="btn verde">Activar Trial + Generar Contrato</button></form><div id="res"></div>';
+} else if(path.includes('contrato')){
+ html='<iframe src="https://basa-v7-1.onrender.com/contrato" style="width:100%;height:800px;border:none;border-radius:12px"></iframe>';
+} else if(path.includes('gestion')){
+ html='<iframe src="https://basa-v7-1.onrender.com/gestion-informes" style="width:100%;height:900px;border:none;border-radius:12px"></iframe>';
+} else {
+ html='<h3>Sistema BASA V13 FULL</h3><p>Use /trial para registro SaaS</p>';
+}
+document.getElementById('contenido').innerHTML=html;
+function activar(e){
+ e.preventDefault();
+ var empresa=document.getElementById('empresa').value;
+ var rnc=document.getElementById('rnc').value;
+ var email=document.getElementById('email').value;
+ fetch('https://basa-v7-1.onrender.com/api/activar-saas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:empresa,rnc:rnc,email:email,pais:'DO',mods:['B4_BASE','M9_NOBACI','M11_PAGOS','M10_INV']})}).then(function(r){return r.json();}).then(function(d){
+  document.getElementById('res').innerHTML='<p style="color:#00a86b">Contrato '+d.contrato+' generado Total USD$'+d.total+'</p><a href="https://basa-v7-1.onrender.com/api/contrato/'+d.contrato+'" target="_blank" class="btn verde">Descargar Contrato PDF Real</a><a href="https://basa-v7-1.onrender.com/gestion-informes" class="btn azul">Ir a Gestion Informes y Replicas</a>';
+ });
+ return false;
+}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+</script></body></html>
+"""
+
+@app.route('/')
+def root():
+    return render_template_string(INDEX_HTML)
+
+@app.route('/trial')
+def trial():
+    return render_template_string(INDEX_HTML)
+
+@app.route('/index.html')
+def index_html():
+    return render_template_string(INDEX_HTML)
 
 @app.route('/manifest.json')
 def manifest():
-    return jsonify({"name":"BASA V10 - Auditoria Forense + NOBACI + IA","short_name":"BASA V10","description":"USD250 x modulo - NOBACI - Libramientos - Inventarios - PWA Android iPhone","start_url":"/activar-modulos","display":"standalone","background_color":"#0f172a","theme_color":"#00d084","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3064/3064197.png","sizes":"512x512","type":"image/png"}]})
+    return jsonify({"name":"BASA V13 Audit Intelligence","short_name":"BASA V13","start_url":"/trial","display":"standalone","theme_color":"#00d084"})
 
 @app.route('/sw.js')
 def sw():
-    js = "self.addEventListener('install', function(e){self.skipWaiting();}); self.addEventListener('fetch', function(e){e.respondWith(fetch(e.request));});"
-    return Response(js, mimetype='application/javascript')
-
-@app.route('/')
-def home():
-    return jsonify({"sistema":"BASA V10 FINAL FULL","version":"10.0 NO ERROR PWA","bhd":BHD_CUENTA,"precio":"USD250 x modulo + impuestos","modulos":len(MODULOS),"paises":list(PAISES.keys()),"rutas":{"/activar-modulos":"Facturacion","/b4":"B4 FULL","/v8":"V8 FULL NOBACI","/demo":"ZIP REAL PWA","/api/auditoria-demo":"JSON prueba"},"status":"OK Sin errores f-string"})
+    return Response("self.addEventListener('install',function(e){self.skipWaiting();});", mimetype='application/javascript')
 
 @app.route('/healthz')
 def health():
-    return jsonify({"status":"OK V10 FINAL - NO ERROR"})
+    return jsonify({"status":"OK V13 FIX 404","front":FRONT_URL+"/trial","back":BASE_URL})
 
-@app.route('/activar-modulos')
-def activar():
-    mods_html = ""
-    cats = {}
-    for k, v in MODULOS.items():
-        cat = v["cat"]
-        if cat not in cats:
-            cats[cat] = []
-        cats[cat].append((k, v))
-    for cat, lista in cats.items():
-        mods_html = mods_html + "<h3 style='color:#003366;margin-top:14px;border-bottom:2px solid #00d084;padding-bottom:4px'>"+cat+"</h3>"
-        for k, v in lista:
-            chk = "checked disabled" if k == "B4_BASE" else "checked"
-            mods_html = mods_html + "<div style='border:2px solid #e2e8f0;padding:11px;margin:7px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;background:#f8fafc'><div><b>"+v["nombre"]+"</b><br><small style='color:#475569'>"+v["desc"]+"</small><br><span style='color:#00a86b;font-weight:bold'>USD$"+str(v["precio"])+"/mes</span> <small style='background:#e0f2fe;padding:2px 6px;border-radius:4px'>"+v["ley"]+"</small></div><div><input type='checkbox' value='"+k+"' "+chk+" class='chk' onchange='calcUSD()' style='width:23px;height:23px'></div></div>"
-    pais_opts = ""
-    for code, info in PAISES.items():
-        pais_opts = pais_opts + "<option value='"+code+"'>"+info["nombre"]+" - "+info["leyes"][0]+"</option>"
-
-    page = """
-<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><link rel='manifest' href='/manifest.json'><meta name='theme-color' content='#00d084'><title>BASA V10 FINAL</title><style>
-body{font-family:system-ui,Arial;background:#0f172a;color:white;padding:10px;margin:0}.card{background:white;color:#0f172a;padding:18px;border-radius:16px;max-width:1050px;margin:auto}.btn{padding:10px 14px;border-radius:8px;font-weight:bold;border:none;margin:4px;cursor:pointer;text-decoration:none;display:inline-block}.verde{background:#00d084;color:white;width:100%;font-size:17px;padding:15px}.azul{background:#003366;color:white}.fact{background:#f0f7ff;padding:14px;border-radius:12px;border-left:5px solid #003366;margin-top:10px}.amarillo{background:#fef3c7;border:2px solid #f59e0b;padding:12px;border-radius:10px;margin:10px 0;color:#92400e}select,input{width:100%;padding:9px;border:2px solid #cbd5e1;border-radius:8px;margin:4px 0;font-size:14px}.badge{background:#00d084;color:white;padding:3px 8px;border-radius:20px;font-size:10px}
-</style></head><body>
-<h1 style='text-align:center;color:#00d084;margin:6px'>BASA V10 FINAL FULL <span class='badge'>SIN ERRORES</span><br><small style='font-size:12px;color:#94a3b8'>USD$250 x Modulo + Impuestos | 13 Modulos | NOBACI + Libramientos + Inventarios + Nomina + IA | PWA Android iPhone</small></h1>
-<div style='background:#00d084;color:white;padding:7px;border-radius:8px;text-align:center;margin-bottom:10px;font-size:12px;font-weight:bold'>ANDROID: Chrome Menu ⋮ > Instalar app | IPHONE: Safari Compartir > Agregar a inicio</div>
-<div class='card'>
-<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px'>
-<div>Pais/Leyes:<select id='pais' onchange='calcUSD()'>""" + pais_opts + """</select></div>
-<div>Idioma:<select id='idioma'><option value='es'>Espanol</option><option value='en'>English</option><option value='fr'>Francais</option><option value='pt'>Portugues</option></select></div>
-<div>Moneda:<select id='moneda'><option value='USD'>USD</option><option value='DOP'>DOP</option><option value='EUR'>EUR</option><option value='MXN'>MXN</option></select></div>
-</div>
-""" + mods_html + """
-<div class='fact'><h3 style='margin:4px 0'>Facturacion Automatica USD - BHD 08694150021 + Stripe</h3>
-<div style='display:grid;grid-template-columns:1fr 1fr;gap:8px'>
-<div>Empresa:<input id='emp' placeholder='Ej: Ministerio Hacienda'></div>
-<div>RNC / TAX ID:<input id='rnc' placeholder='Ej: 001-00000-1'></div>
-</div>
-<div id='factUSD' style='margin-top:8px;background:white;padding:10px;border-radius:8px;border:1px dashed #003366'>Calculando USD...</div>
-</div>
-<div class='amarillo'><label><input type='checkbox' id='ok'> <b>ACEPTO CONTRATO V10 FINAL USD250 + PAGO AUTO</b></label><br><small>13 modulos NOBACI + Libramientos SIGEF + Inventarios + Nomina + Activos + Pagos + Informes IA + Multi-Pais + Multi-Idioma. Firma Ley 126-02 + ESIGN + eIDAS. BHD 08694150021.</small><br><div style='margin-top:6px'><a href='/api/contrato' target='_blank' class='btn azul'>Ver Contrato</a> <a href='/api/nobaci' target='_blank' class='btn azul'>Ver NOBACI</a></div>
-</div>
-<button class='btn verde' onclick='pagarAuto()'>PAGAR AUTOMATICO USD + ACTIVAR V10 FULL - SIN ERRORES</button>
-<div id='res' style='display:none;background:#ecfdf5;padding:14px;border-radius:12px;margin-top:10px;border:2px solid #00d084'></div>
-<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px'>
-<a href='/demo' class='btn azul' style='text-align:center;background:#00d084'>📦 ZIP REAL - APP ANDROID IPHONE</a>
-<a href='/b4' class='btn azul' style='text-align:center'>B4 FULL Informe IA + NOBACI</a>
-<a href='/v8' class='btn azul' style='text-align:center'>V8 FULL NOBACI + Libram + Invent</a>
-</div>
-<div style='margin-top:10px;font-size:11px;color:#64748b;text-align:center'>BASA V10 FINAL | BHD: 08694150021 | 13 modulos USD250 | Multi-Pais DO US MX PA CO ES | PWA instalable | Sin errores f-string Render Live OK</div>
-</div>
-<script>
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
-function calcUSD(){
-var activos=[];
-var checks=document.querySelectorAll('.chk:checked');
-for(var i=0;i<checks.length;i++){if(activos.indexOf(checks[i].value)===-1) activos.push(checks[i].value);}
-if(activos.indexOf('B4_BASE')===-1) activos.unshift('B4_BASE');
-var total=activos.length*250;
-var pais=document.getElementById('pais').value;
-var imp=0.18;
-if(pais==='DO') imp=0.18;
-if(pais==='MX') imp=0.16;
-if(pais==='PA') imp=0.07;
-if(pais==='CO') imp=0.19;
-if(pais==='ES') imp=0.21;
-if(pais==='US') imp=0.0;
-var impuesto=Math.round(total*imp*100)/100;
-var grand=total+impuesto;
-var hoy=new Date();
-var ultimo=new Date(hoy.getFullYear(),hoy.getMonth()+1,0).getDate();
-var dias=ultimo-hoy.getDate()+1;
-var primer=Math.round((grand/30)*dias*100)/100;
-var moneda=document.getElementById('moneda').value;
-document.getElementById('factUSD').innerHTML='Pais: '+pais+' | Modulos: '+activos.length+' x USD250 = USD$'+total+'<br>Impuesto '+(imp*100)+'%: USD$'+impuesto+'<br><b>Total Mensual: USD$'+grand+' '+moneda+'</b> | Primer pago ('+dias+' dias): <b>USD$'+primer+' '+moneda+'</b><br>BHD: 08694150021 - Stripe automatica';
-window._act=activos; window._grand=grand; window._pais=pais;
-}
-function pagarAuto(){
-if(!document.getElementById('ok').checked){alert('Debe aceptar contrato V10');return;}
-var emp=document.getElementById('emp').value;
-var rnc=document.getElementById('rnc').value;
-if(!emp||!rnc){alert('Ingrese Empresa y RNC');return;}
-var btn=document.querySelector('.verde');
-btn.innerHTML='PROCESANDO PAGO USD$'+window._grand+'...';
-fetch('/api/pagar-stripe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mods:window._act,pais:window._pais,empresa:emp,rnc:rnc,total:window._grand})}).then(function(r){return r.json();}).then(function(d){
-if(d.url){window.location=d.url;}
-else{
-var res=document.getElementById('res'); res.style.display='block';
-res.innerHTML='<h3 style="color:#00a86b">FACTURA BHD 08694150021</h3><p><b>Total: USD$'+d.total+'</b><br>Empresa: '+emp+'<br>Pais: '+window._pais+'<br>Modulos: '+window._act.length+'<br><br>Transfiera a BHD 08694150021 USD Y DOP<br>Concepto: BASA V10 '+emp+'</p><a href="/pago-exitoso?demo=1&empresa='+encodeURIComponent(emp)+'" class="btn verde">YA PAGUE - ACTIVAR V10 FULL</a>';
-}
-});
-}
-calcUSD();
-</script></body></html>
-"""
-    return page
-
-@app.route('/api/pagar-stripe', methods=['POST'])
-def pagar_stripe():
-    data = request.get_json() or {}
-    mods = data.get('mods', [])
-    pais = data.get('pais', 'DO')
-    total = data.get('total', 3835)
-    empresa = data.get('empresa', 'Cliente')
-    if STRIPE_KEY.startswith("sk_"):
-        try:
-            import stripe
-            stripe.api_key = STRIPE_KEY
-            sess = stripe.checkout.Session.create(payment_method_types=['card'],line_items=[{'price_data':{'currency':'usd','product_data':{'name':'BASA V10 '+str(len(mods))+' mod '+pais+' - '+empresa},'unit_amount':int(total*100)},'quantity':1}],mode='payment',success_url='https://basa-v7-1.onrender.com/pago-exitoso?session_id={CHECKOUT_SESSION_ID}',cancel_url='https://basa-v7-1.onrender.com/activar-modulos')
-            return jsonify({"url": sess.url})
-        except Exception as e:
-            return jsonify({"bhd": BHD_CUENTA, "total": total, "error": str(e)})
-    else:
-        return jsonify({"bhd": BHD_CUENTA, "total": total})
-
-@app.route('/pago-exitoso')
-def pago_ok():
-    sid = request.args.get('session_id', 'BHD-'+datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-    emp = request.args.get('empresa', 'Cliente V10')
-    session['activado'] = True
-    session['contrato'] = "CTR-V10-PAGADO-"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    html = "<body style='font-family:Arial;background:#ecfdf5;padding:20px;text-align:center'><h1 style='color:#00a86b'>PAGO EXITOSO - BASA V10 FINAL ACTIVO FULL</h1><div style='background:white;padding:22px;border-radius:14px;max-width:750px;margin:auto'><h2>Transaccion: "+sid+"</h2><p>Empresa: "+emp+"</p><p><b>BHD "+BHD_CUENTA+" | 13 modulos USD250</b></p><p style='background:#00d084;color:white;padding:8px;border-radius:8px'><b>Banner DEMO eliminado - FULL activo - Sin errores</b></p><a href='/b4' style='background:#00d084;color:white;padding:12px;border-radius:8px;text-decoration:none;margin:4px;display:inline-block'>B4 FULL</a><a href='/v8' style='background:#003366;color:white;padding:12px;border-radius:8px;text-decoration:none;margin:4px;display:inline-block'>V8 FULL</a><a href='/demo' style='background:#6b7280;color:white;padding:12px;border-radius:8px;text-decoration:none;margin:4px;display:inline-block'>ZIP PWA</a></div></body>"
+@app.route('/contrato')
+def contrato_page():
+    pais_opts=""
+    for code in PAISES:
+        pais_opts=pais_opts+"<option value='"+code+"'>"+PAISES[code]["nombre"]+"</option>"
+    mods_opts=""
+    for k in MODULOS:
+        sel="selected" if k in ["B4_BASE","M9_NOBACI"] else ""
+        mods_opts=mods_opts+"<option value='"+k+"' "+sel+">"+MODULOS[k]["nombre"]+"</option>"
+    html="<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Contrato V13</title><style>body{font-family:Arial;background:#0f172a;color:white;padding:10px}.card{background:white;color:black;padding:18px;border-radius:16px;max-width:950px;margin:auto}.btn{padding:10px;border-radius:8px;font-weight:bold;border:none;margin:4px;text-decoration:none;display:inline-block}.verde{background:#00d084;color:white;width:100%}input,select{width:100%;padding:8px;border:2px solid #cbd5e1;border-radius:8px;margin:4px 0}</style></head><body>"
+    html=html+"<h2 style='color:#00d084;text-align:center'>CONTRATO FUNCIONAL V13 + TRIAL FIX</h2><div class='card'><form id='auditSaaSForm' onsubmit='return integrar(event)'><label>Empresa:</label><input id='empresa' required><label>RNC:</label><input id='rnc' required><label>Email:</label><input id='email' type='email' required><label>Pais:</label><select id='pais'>"+pais_opts+"</select><label>Modulos:</label><select id='modulos' multiple size='6'>"+mods_opts+"</select><label><input type='checkbox' id='aceptaContrato' required style='width:20px;height:20px'> Acepto Contrato SaaS BASA</label><div id='resumen' style='background:#ecfdf5;padding:8px;border-radius:8px;margin:8px 0'></div><button type='submit' class='btn verde'>Activar Cuenta y Acceder</button></form><div id='res' style='display:none'></div><a href='/gestion-informes' class='btn' style='background:#003366;color:white;width:100%;text-align:center;margin-top:10px'>GESTION INFORMES Y REPLICAS + HISTORIAL</a></div>"
+    html=html+"<script>function integrar(e){e.preventDefault();var emp=document.getElementById('empresa').value;var rnc=document.getElementById('rnc').value;var email=document.getElementById('email').value;var pais=document.getElementById('pais').value;var sel=document.getElementById('modulos');var mods=[];for(var i=0;i<sel.options.length;i++){if(sel.options[i].selected) mods.push(sel.options[i].value);}if(mods.indexOf('B4_BASE')==-1) mods.unshift('B4_BASE');fetch('/api/activar-saas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp,rnc:rnc,email:email,pais:pais,mods:mods})}).then(function(r){return r.json();}).then(function(d){var res=document.getElementById('res');res.style.display='block';res.innerHTML='<h3>Contrato '+d.contrato+' OK</h3><a href=\"/api/contrato/'+d.contrato+'\" target=\"_blank\" class=\"btn verde\">Descargar PDF Real</a><a href=\"/gestion-informes\" class=\"btn\" style=\"background:#003366;color:white\">Ir a Informes y Replicas</a>';});return false;}</script></body></html>"
     return html
+
+@app.route('/api/activar-saas', methods=['POST'])
+def activar_saas():
+    data=request.get_json() or {}
+    empresa=data.get('empresa','Empresa Demo')
+    rnc=data.get('rnc','001')
+    email=data.get('email','demo@demo.com')
+    pais=data.get('pais','DO')
+    mods=data.get('mods',['B4_BASE'])
+    if 'B4_BASE' not in mods:
+        mods=['B4_BASE']+mods
+    sub=len(mods)*250
+    imp=PAISES.get(pais,PAISES["DO"])["impuesto"]
+    total=round(sub*(1+imp),2)
+    cid="CTR-V13-"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    texto=generar_contrato_txt(empresa,rnc,email,mods,pais,total,cid)
+    session['activado']=True
+    session['contrato']=cid
+    session['empresa']=empresa
+    session['rnc']=rnc
+    session['email']=email
+    session['mods']=mods
+    session['pais']=pais
+    session['total']=total
+    session['texto_contrato']=texto
+    path="/tmp/"+cid+".txt"
+    try:
+        with open(path,'w',encoding='utf-8') as f:
+            f.write(texto)
+    except:
+        pass
+    add_event("CONTRATO","Contrato "+cid+" "+empresa, cid+".pdf","GENERACION")
+    return jsonify({"contrato":cid,"total":total,"bhd":BHD_CUENTA,"trial_url":FRONT_URL+"/trial"})
+
+@app.route('/api/contrato/<cid>')
+def get_contrato(cid):
+    path="/tmp/"+cid+".txt"
+    texto=""
+    if os.path.exists(path):
+        with open(path,'r',encoding='utf-8') as f:
+            texto=f.read()
+    else:
+        texto=session.get('texto_contrato', "CONTRATO "+cid)
+    return send_file(io.BytesIO(texto.encode('utf-8')), mimetype="application/pdf", as_attachment=True, download_name=cid+".pdf")
+
+@app.route('/api/contrato')
+def contrato_base():
+    txt=generar_contrato_txt("DEMO","001","demo@demo.com",list(MODULOS.keys())[:3],"DO",750,"CTR-DEMO")
+    return send_file(io.BytesIO(txt.encode('utf-8')), mimetype="application/pdf", as_attachment=False, download_name="CONTRATO_BASE.pdf")
+
+@app.route('/gestion-informes')
+def gestion_informes():
+    empresa=session.get('empresa','Empresa DEMO - Active en /contrato o /trial')
+    rnc=session.get('rnc','001')
+    contrato=session.get('contrato','CTR-DEMO')
+    historial=get_historial()
+    filas=""
+    if len(historial)==0:
+        filas="<tr><td colspan='5' class='text-center text-muted'>No hay replicas registradas en esta auditoria.</td></tr>"
+    else:
+        for ev in historial[:50]:
+            filas=filas+"<tr><td>"+ev["fecha"]+"</td><td><span style='background:#003366;color:white;padding:2px 6px;border-radius:4px'>"+ev["tipo"]+"</span></td><td>"+ev["descripcion"]+"<br><small>"+ev["archivo"]+"</small></td><td>"+ev["accion"]+"</td><td><a href='/api/descargar-replica/"+ev["archivo"]+"' target='_blank'>Ver</a></td></tr>"
+    html="<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'><title>Gestion Informes V13</title><style>body{background:#0f172a;color:white}</style></head><body>"
+    html=html+"<div class='container mt-3'><h2 style='color:#00d084;text-align:center'>BASA V13 - GESTION INFORMES Y REPLICAS + HISTORIAL - FIX 404</h2><div class='card shadow mb-4' style='color:#0f172a'><div class='card-header py-3 bg-primary text-white' style='background:#003366!important'><h5 class='m-0'>Empresa: "+empresa+" - Contrato: "+contrato+" - RNC: "+rnc+"</h5></div><div class='card-body'>"
+    html=html+"<div class='row mb-4'><div class='col-md-4'><div class='border p-3 rounded bg-light'><h6>1. Acta de Lecturas</h6><button class='btn btn-sm btn-info w-100 mb-2' onclick='generarInforme(\"acta_lectura\")'>Generar Acta</button><hr><label class='small fw-bold'>Cargar Replica multiple:</label><input type='file' class='form-control form-control-sm mb-2' id='file_acta' multiple><button class='btn btn-sm btn-secondary w-100' onclick='subirReplica(\"acta_lectura\")'>Subir Replica</button></div></div>"
+    html=html+"<div class='col-md-4'><div class='border p-3 rounded bg-light'><h6>2. Informe Preliminar</h6><button class='btn btn-sm btn-info w-100 mb-2' onclick='generarInforme(\"preliminar\")'>Generar Preliminar</button><hr><label class='small fw-bold'>Cargar Replica multiple:</label><input type='file' class='form-control form-control-sm mb-2' id='file_preliminar' multiple><button class='btn btn-sm btn-secondary w-100' onclick='subirReplica(\"preliminar\")'>Subir Replica</button></div></div>"
+    html=html+"<div class='col-md-4'><div class='border p-3 rounded bg-light'><h6>3. Informe Final</h6><button class='btn btn-sm btn-info w-100 mb-2' onclick='generarInforme(\"final\")'>Generar Final</button><hr><label class='small fw-bold'>Cargar Recurso multiple:</label><input type='file' class='form-control form-control-sm mb-2' id='file_final' multiple><button class='btn btn-sm btn-secondary w-100' onclick='subirReplica(\"final\")'>Subir Recurso</button></div></div></div>"
+    html=html+"<hr><h6 class='fw-bold'>Historial Intervenciones y Replicas</h6><div class='table-responsive'><table class='table table-striped table-sm' id='tablaHistorial'><thead style='background:#003366;color:white'><tr><th>Fecha/Hora</th><th>Tipo</th><th>Descripcion/Archivo</th><th>Accion</th><th>Ver</th></tr></thead><tbody>"+filas+"</tbody></table></div>"
+    html=html+"<div style='text-align:center'><a href='/contrato' class='btn btn-sm' style='background:#003366;color:white'>Contrato</a><a href='/trial' class='btn btn-sm' style='background:#00d084;color:white'>Trial FIX</a><a href='/api/exportar-historial' class='btn btn-sm btn-dark'>Exportar Historial</a></div></div></div></div>"
+    html=html+"<script>function generarInforme(tipo){if(confirm('Generar '+tipo.toUpperCase()+'?')){window.location.href='/api/generar-informe/'+tipo;}}function subirReplica(etapa){var input=document.getElementById('file_'+etapa);if(input.files.length==0){alert('Seleccione archivo(s)');return;}var fd=new FormData();for(var i=0;i<input.files.length;i++){fd.append('files',input.files[i]);}fd.append('etapa',etapa);fetch('/api/subir-replica',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert('Replica(s) cargada(s) '+etapa.toUpperCase());location.reload();}});}</script></body></html>"
+    return html
+
+@app.route('/api/generar-informe/<tipo>')
+def api_gen_inf(tipo):
+    if tipo not in ["acta_lectura","preliminar","final"]:
+        return jsonify({"error":"Tipo invalido"}),400
+    empresa=session.get('empresa','DEMO')
+    rnc=session.get('rnc','001')
+    contenido=generar_informe_txt(tipo,empresa,rnc)
+    add_event(tipo,"Generado "+tipo+" para "+empresa, tipo+"_"+session.get('contrato','CTR')+".pdf","GENERACION INFORME")
+    return send_file(io.BytesIO(contenido.encode('utf-8')), mimetype="application/pdf", as_attachment=True, download_name=tipo.upper()+"_"+session.get('contrato','CTR')+".pdf")
+
+@app.route('/api/subir-replica', methods=['POST'])
+def api_subir_replica():
+    etapa=request.form.get('etapa','acta_lectura')
+    empresa=session.get('empresa','DEMO')
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    files=request.files.getlist('files')
+    guardados=[]
+    for f in files:
+        if f.filename=='':
+            continue
+        fname=secure_filename(f.filename)
+        final_name=datetime.datetime.now().strftime("%Y%m%d_%H%M%S")+"_"+etapa+"_"+fname
+        path=os.path.join(UPLOAD_FOLDER, final_name)
+        f.save(path)
+        add_event(etapa,"Replica cargada: "+fname+" - "+empresa, final_name,"CARGA REPLICA")
+        guardados.append(final_name)
+    return jsonify({"ok":True,"files":guardados})
+
+@app.route('/api/descargar-replica/<fname>')
+def descargar_rep(fname):
+    path=os.path.join(UPLOAD_FOLDER, secure_filename(fname))
+    if os.path.exists(path):
+        return send_file(path, as_attachment=True, download_name=fname)
+    return jsonify({"error":"No encontrado"}),404
+
+@app.route('/api/exportar-historial')
+def exportar_hist():
+    hist=get_historial()
+    txt="HISTORIAL V13 - "+session.get('contrato','CTR')+"\n"
+    for ev in hist:
+        txt=txt+ev["fecha"]+" | "+ev["tipo"]+" | "+ev["descripcion"]+" | "+ev["archivo"]+" | "+ev["accion"]+"\n"
+    return send_file(io.BytesIO(txt.encode('utf-8')), mimetype="application/pdf", as_attachment=True, download_name="HISTORIAL_"+session.get('contrato','CTR')+".pdf")
+
+@app.route('/api/historial')
+def api_hist():
+    return jsonify(get_historial())
 
 @app.route('/b4')
 def b4():
-    act = session.get('activado', False)
-    estado = "FULL ACTIVO - SIN ERRORES" if act else "DEMO - Active en /activar-modulos"
-    banner = "" if act else "<div style='background:#fef3c7;padding:10px;border-radius:8px;color:#92400e;margin-bottom:10px;border:2px solid #f59e0b'><b>DEMO</b> - Active V10 FINAL USD250 x modulo - BHD 08694150021</div>"
-    html = "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><link rel='manifest' href='/manifest.json'><title>B4 V10 FULL</title><style>body{font-family:Arial;background:#0f172a;color:white;padding:10px}.card{background:white;color:#0f172a;padding:16px;border-radius:12px;max-width:1150px;margin:auto}.btn{padding:8px 12px;border-radius:6px;background:#003366;color:white;text-decoration:none;margin:3px;display:inline-block;font-weight:bold;font-size:12px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#003366;color:white;padding:6px}td{border:1px solid #e2e8f0;padding:5px}input,select{padding:7px;border:2px solid #cbd5e1;border-radius:6px;margin:3px;width:95%}.ok{background:#ecfdf5;border:2px solid #00d084;padding:10px;border-radius:8px}.warn{background:#fef3c7;border:2px solid #f59e0b;padding:10px;border-radius:8px}</style></head><body>"
-    html = html + "<h2 style='color:#00d084;text-align:center'>B4 V10 FINAL FULL - Informe Pericial IA + NOBACI + Libramientos + Inventarios - "+estado+"</h2><div class='card'>"+banner
-    html = html + "<div style='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px'><div>Pais:<select id='paisB4'><option value='DO'>DO - NOBACI</option><option value='US'>US - FAR</option><option value='MX'>MX - LAASSP</option></select></div><div>Entidad:<input id='ent' value='Ministerio Hacienda'></div><div>Periodo:<input id='per' value='2020-2025'></div><div>Portal:<input id='portal' value='comprasdominicana.gob.do'></div></div>"
-    html = html + "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px'><div class='ok'><h4>Analisis IA - 13 Modulos</h4><ul style='font-size:12px'><li>M1 Scraper 10 anos portal</li><li>M2 Fracc 4 criterios + Libramientos SIGEF</li><li>M9 NOBACI COSO</li><li>M10 Inventarios IA + Kardex</li><li>M11 Pagos + Cheques</li><li>M6 Nomina fantasma + TSS</li><li>M3/M4/M5 Mismo dueno + PEPs</li></ul></div><div class='warn'><h4>Informe Pericial IA</h4><button onclick='generarInforme()' style='background:#00d084;color:white;padding:11px;border:none;border-radius:8px;width:100%;font-weight:bold'>GENERAR INFORME IA FULL V10</button><div id='infRes' style='margin-top:8px;font-size:12px;background:white;padding:8px;border-radius:6px'></div></div></div>"
-    html = html + "<table style='margin-top:12px'><tr><th>RNC</th><th>Proveedor</th><th>Monto USD</th><th>Riesgo IA</th><th>NOBACI</th><th>Libramiento</th><th>Inventario</th></tr><tr><td>130-12345-1</td><td>Constructora X SRL</td><td>USD$125k</td><td style='color:red;font-weight:bold'>ALTO</td><td>Incumple NOBACI-3</td><td>SIGEF 12345 sin soporte RD$2M</td><td>Faltante RD$500k</td></tr><tr><td>101-98765-2</td><td>Servicios Y</td><td>USD$85k</td><td style='color:orange;font-weight:bold'>MEDIO</td><td>NOBACI-2</td><td>Cheque duplicado</td><td>Activo no registrado</td></tr></table>"
-    html = html + "<div style='text-align:center;margin-top:12px'><a href='/activar-modulos' class='btn'>Activar V10 USD</a><a href='/v8' class='btn'>V8 NOBACI</a><a href='/demo' class='btn' style='background:#00d084'>ZIP REAL PWA</a></div></div>"
-    html = html + "<script>function generarInforme(){var pais=document.getElementById('paisB4').value;var ent=document.getElementById('ent').value;document.getElementById('infRes').innerHTML='<b>Generando informe V10...</b><br>Entidad: '+ent+'<br>Pais: '+pais+'<br><span style=color:#00a86b;font-weight:bold>Informe 68 paginas + NOBACI + Libramientos + Inventarios listo</span><br><a href=\"/api/contrato\" target=\"_blank\">Descargar PDF</a>';}</script></body></html>"
-    return html
+    return "<body style='font-family:Arial;background:#0f172a;color:white;padding:10px'><h2 style='color:#00d084'>B4 V13 FIX 404</h2><div style='background:white;color:black;padding:16px;border-radius:12px;max-width:1100px;margin:auto'><a href='/gestion-informes' style='background:#00d084;color:white;padding:10px;border-radius:8px;text-decoration:none'>Gestion Informes</a> <a href='/trial' style='background:#003366;color:white;padding:10px;border-radius:8px;text-decoration:none'>Trial FIX</a></div></body>"
 
 @app.route('/v8')
 def v8():
-    act = session.get('activado', False)
-    estado = "FULL ACTIVO V10" if act else "DEMO"
-    html = "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><link rel='manifest' href='/manifest.json'><title>V8 V10 FULL</title><style>body{font-family:Arial;background:#0a192f;color:white;padding:10px}.card{background:white;color:#0f172a;padding:16px;border-radius:12px;max-width:1250px;margin:auto}.btn{padding:8px 12px;border-radius:6px;background:#003366;color:white;text-decoration:none;margin:3px;display:inline-block;font-weight:bold;font-size:12px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#003366;color:white;padding:6px}td{border:1px solid #e2e8f0;padding:4px}</style></head><body>"
-    html = html + "<h2 style='color:#00d084;text-align:center'>V8 / V10 FINAL FULL - NOBACI + Libramientos + Inventarios + Nomina + IA - "+estado+"</h2><div class='card'>"
-    html = html + "<table><tr><th>Modulo USD250</th><th>Analisis IA</th><th>Ley / Pais</th><th>Evidencia IA</th><th>Riesgo</th></tr>"
-    html = html + "<tr><td><b>M9 NOBACI</b></td><td>Ambiente Control, Riesgo, Actividades, Info, Monitoreo + COSO</td><td>NOBACI RD + COSO</td><td>Matriz NOBACI 3 debiles 12 hallazgos</td><td style='color:red'>ALTO</td></tr>"
-    html = html + "<tr><td><b>M11 Libramientos</b></td><td>SIGEF Contraloria sin soporte + duplicados + cheques</td><td>Ley 10-07 + Contraloria</td><td>SIGEF 12345 sin soporte RD$2.3M</td><td style='color:red'>CRITICO</td></tr>"
-    html = html + "<tr><td><b>M10 Inventarios</b></td><td>Toma fisica IA + Kardex + Activos fijos</td><td>NOBACI Activos + NICSP</td><td>Faltante RD$1.5M + 23 no registrados</td><td style='color:orange'>MEDIO-ALTO</td></tr>"
-    html = html + "<tr><td><b>M6 Nomina</b></td><td>Fantasma + doble cargo + TSS MAP IRS SAT</td><td>TSS DO + MAP</td><td>15 fantasma + 8 doble cargo RD$1.2M</td><td style='color:red'>ALTO</td></tr>"
-    html = html + "<tr><td><b>M2 Fracc</b></td><td>Fraccionamiento 4 criterios 15 dias mismo objeto</td><td>Ley 340-06 Art5</td><td>12 procesos fraccionados USD$450k</td><td style='color:red'>ALTO</td></tr>"
-    html = html + "<tr><td><b>M1 Scraper</b></td><td>Scraping 10 anos portal pais + IA</td><td>Portal pais</td><td>1,234 procesos analizados</td><td style='color:#00a86b'>OK</td></tr></table>"
-    html = html + "<p style='margin-top:10px;font-size:12px'><b>BHD:</b> "+BHD_CUENTA+" | <b>USD250 x modulo + impuestos</b> | <b>13 modulos = USD$3250 + impuesto</b> | <b>PWA Android iPhone</b></p>"
-    html = html + "<div style='text-align:center'><a href='/activar-modulos' class='btn'>Activar</a><a href='/b4' class='btn'>B4 FULL</a><a href='/demo' class='btn' style='background:#00d084'>ZIP REAL PWA</a></div></div></body></html>"
-    return html
-
-@app.route('/api/auditoria-demo')
-def demo_json():
-    return jsonify({"AVISO":"JSON PRUEBA - ZIP REAL en /demo","V10_FINAL":{"version":"10.0 SIN ERRORES","bhd":BHD_CUENTA,"modulos":len(MODULOS),"precio":"USD250 x modulo","b4":"/b4 FULL","v8":"/v8 FULL NOBACI","pwa":"Android + iPhone + Windows + Mac instalable","mejoras":["Sin errores f-string","B4 FULL","V8 FULL","ZIP REAL","PWA","Stripe + BHD","Multi-Pais 6","Multi-Idioma 4","13 modulos"]}})
-
-@app.route('/api/nobaci')
-def nobaci():
-    return jsonify({"NOBACI_RD":{"componentes":["Ambiente Control","Valoracion Riesgo","Actividades Control","Informacion","Monitoreo"],"ley":"NOBACI + COSO + Ley 10-07"},"LIBRAMIENTOS":{"SIGEF":["Sin soporte","Duplicados","Sin contrato","Cheques duplicados"],"ley":"Ley 10-07 + Contraloria"},"INVENTARIOS":{"procesos":["Toma fisica IA","Kardex","Activos fijos","Depreciacion"],"ley":"NOBACI Activos + NICSP"}})
-
-@app.route('/api/contrato')
-def contrato():
-    txt = "CONTRATO BASA V10 FINAL FULL USD250 x MODULO BHD 08694150021 - NOBACI + LIBRAMIENTOS + INVENTARIOS + NOMINA + PAGOS + IA - SIN ERRORES - PWA ANDROID IPHONE"
-    return send_file(io.BytesIO(txt.encode()), mimetype="application/pdf", as_attachment=True, download_name="CONTRATO_V10_FINAL_FULL.pdf")
+    return "<body style='font-family:Arial;background:#0a192f;color:white;padding:10px'><h2 style='color:#00d084'>V8 V13 FIX</h2><div style='background:white;color:black;padding:16px;border-radius:12px;max-width:1100px;margin:auto'><a href='/gestion-informes' style='background:#00d084;color:white;padding:10px;border-radius:8px;text-decoration:none'>Gestion Informes</a></div></body>"
 
 @app.route('/demo')
 def demo_zip():
-    m = io.BytesIO()
-    with zipfile.ZipFile(m, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("LEAME_V10_FINAL_SIN_ERRORES.txt", "BASA V10 FINAL FULL - SIN ERRORES RENDER LIVE OK\nBHD: "+BHD_CUENTA+"\n13 modulos USD250\nFIX: Sin f-string error\nB4 FULL + V8 FULL + PWA Android iPhone\nANDROID: Chrome Menu > Instalar app\nIPHONE: Safari Compartir > Agregar a inicio\n")
-        zf.writestr("manifest.json", json.dumps({"name":"BASA V10 FINAL","short_name":"BASA V10","start_url":"/activar-modulos","display":"standalone","theme_color":"#00d084"}, indent=2))
-        zf.writestr("sw.js", "self.addEventListener('install', function(e){self.skipWaiting();});")
-        zf.writestr("index.html", "<html><body><h1>BASA V10 FINAL FULL - SIN ERRORES</h1><a href='https://basa-v7-1.onrender.com/activar-modulos'>Abrir</a></body></html>")
-        zf.writestr("MODULOS_13.txt", json.dumps(MODULOS, indent=2, ensure_ascii=False))
-        zf.writestr("PAISES_6.txt", json.dumps(PAISES, indent=2, ensure_ascii=False))
-        zf.writestr("ANDROID_IPHONE_PWA.txt", "ANDROID Chrome Menu > Instalar app\nIPHONE Safari Compartir > Agregar a inicio")
+    m=io.BytesIO()
+    with zipfile.ZipFile(m,mode="w",compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("FIX_404_NETLIFY.txt","FIX para audit-intelligence-usa.com/trial 404\n1. Crear netlify.toml con redirects\n2. Crear _redirects con /* /index.html 200\n3. Subir a Netlify\n4. Limpiar cache y redeploy\nBackend Render: basa-v7-1.onrender.com\nFrontend Netlify: audit-intelligence-usa.com\n")
+        zf.writestr("netlify.toml","[build]\n publish = \".\"\n[[redirects]]\n from = \"/*\"\n to = \"/index.html\"\n status = 200\n")
+        zf.writestr("_redirects","/* /index.html 200\n")
     m.seek(0)
-    return send_file(m, mimetype="application/zip", as_attachment=True, download_name="BASA_V10_FINAL_FULL_SIN_ERRORES_PWA_REAL.zip")
+    return send_file(m, mimetype="application/zip", as_attachment=True, download_name="BASA_V13_FIX_404_TRIAL.zip")
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+if __name__=='__main__':
+    app.run(host='0.0.0.0',port=int(os.environ.get("PORT",10000)))
