@@ -1,0 +1,15 @@
+[build]
+  publish = "."
+  command = "echo 'BASA V14 FIX'"
+
+[[redirects]]
+  from = "/trial"
+  to = "/index.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
