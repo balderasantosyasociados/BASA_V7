@@ -1,0 +1,33 @@
+[build]
+  publish = "."
+  command = "echo 'BASA V13'"
+
+[[redirects]]
+  from = "/trial"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/contrato"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/gestion-informes"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/b4"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/v8"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
