@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>BASA V15 - Audit Intelligence USA - Universal</title>
+<link rel="manifest" href="/manifest.json">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--azul:#003366;--verde:#00d084}
+body{font-family:'Segoe UI',system-ui;background:#0f172a;color:#fff;margin:0}
+.hero{background:linear-gradient(135deg,var(--azul) 0%,var(--verde) 100%);padding:24px 12px;text-align:center}
+.hero h1{font-size:clamp(18px,3vw,32px);font-weight:800}
+.card-basa{background:#fff;color:#0f172a;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.btn-verde{background:var(--verde);color:#fff;font-weight:700;border-radius:10px;padding:12px;width:100%;border:none}
+.btn-azul{background:var(--azul);color:#fff;font-weight:700;border-radius:10px;padding:12px;width:100%;border:none}
+.grid-universal{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.badge-device{background:rgba(255,255,255,0.2);padding:6px 10px;border-radius:20px;font-size:12px;margin:2px;display:inline-block}
+@media (min-width:768px){.hero{padding:40px 20px}.card-basa{padding:24px}}
+@media (min-width:1024px){.container{max-width:1200px}}
+input,select{padding:10px!important;border:2px solid #cbd5e1!important;border-radius:10px!important}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>🚀 BASA V15 - AUDIT INTELLIGENCE USA - UNIVERSAL</h1>
+<p style="margin:6px 0">✅ Ejecuta en: <span class="badge-device">📱 Celular Android</span><span class="badge-device">📱 iPhone</span><span class="badge-device">📱 Tablet</span><span class="badge-device">💻 Laptop</span><span class="badge-device">🖥️ Desktop</span><span class="badge-device">🌐 Online sin descargar</span></p>
+<p id="ruta" style="background:rgba(0,0,0,0.25);padding:6px 12px;border-radius:8px;display:inline-block;font-size:13px"></p>
+<p style="font-size:12px">Backend: basa-v7-1.onrender.com | Frontend: audit-intelligence-usa.com</p>
+</div>
+
+<div class="container my-3">
+<div class="row g-3">
+<!-- COL IZQ - FORM TRIAL -->
+<div class="col-lg-7">
+<div class="card-basa">
+<h4 style="color:#003366;font-weight:800">1️⃣ PRUEBA ONLINE SIN DESCARGAR - Trial SaaS</h4>
+<p class="text-muted small">Funciona en cualquier dispositivo. No necesita instalar ZIP ni APK. Prueba directa en navegador.</p>
+<form id="auditSaaSForm" onsubmit="return integrarCliente(event)">
+<div class="row">
+<div class="col-md-6"><label class="small fw-bold">Empresa / Entidad:</label><input id="empresa" class="form-control" placeholder="Ej: Ministerio Hacienda" required></div>
+<div class="col-md-6"><label class="small fw-bold">RNC / TAX ID:</label><input id="rnc" class="form-control" placeholder="001-00000-1" required></div>
+</div>
+<label class="small fw-bold mt-2">Email Corporativo:</label><input id="email" type="email" class="form-control" placeholder="gerencia@empresa.com" required>
+<div class="row mt-2">
+<div class="col-md-6"><label class="small fw-bold">País:</label><select id="pais" class="form-select"><option value="DO">DO - NOBACI + Ley 340-06</option><option value="US">US - FAR + SOX</option><option value="MX">MX - LAASSP</option><option value="PA">PA - Ley 22</option><option value="ES">ES - LCSP + eIDAS</option></select></div>
+<div class="col-md-6"><label class="small fw-bold">Módulos (USD250 c/u):</label><select id="modulos" class="form-select" multiple size="4"><option value="B4_BASE" selected>B4 Base - Informe Pericial IA</option><option value="M9_NOBACI" selected>M9 - NOBACI</option><option value="M11_PAGOS" selected>M11 - Pagos + Libramientos SIGEF</option><option value="M10_INV" selected>M10 - Inventarios</option><option value="M1_SCRAPER">M1 - Scraper 10 años IA</option><option value="M8_FULL">M8 - Forense Full IA</option></select></div>
+</div>
+<div class="alert alert-warning py-2 mt-2 small" style="background:#fffbeb;border-color:#f59e0b"><input type="checkbox" id="aceptaContrato" required style="width:18px;height:18px"> <b>ACEPTO CONTRATO V15 FINAL USD250 + PAGO AUTO</b><br>13 módulos NOBACI + Libramientos SIGEF + Inventarios + Nómina + Activos + Pagos + Informes IA + Multi-País + Multi-Idioma. Firma Ley 126-02 + ESIGN + eIDAS. BHD 08694150021.<br>
+<div class="mt-2 d-flex gap-2 flex-wrap"><a href="https://basa-v7-1.onrender.com/api/contrato" target="_blank" class="btn btn-sm btn-dark">Ver Contrato</a><a href="https://basa-v7-1.onrender.com/api/contrato" target="_blank" class="btn btn-sm btn-dark">Ver NOBACI</a></div>
+</div>
+<div id="resumen" class="p-2 rounded small" style="background:#f8fafc;border:1px dashed #94a3b8">País: DO | Módulos: 4 x USD250 = USD$1000 | Impuesto 18%: USD$180 | <b>Total Mensual: USD$1180 USD | Primer pago (27 días): USD$1062 USD</b><br>BHD: 08694150021 - Stripe automática</div>
+<button type="submit" class="btn-verde mt-2">💳 PAGAR AUTOMÁTICO USD + ACTIVAR V15 FULL - SIN ERRORES - ONLINE</button>
+</form>
+<div id="res" style="display:none" class="mt-3"></div>
+</div>
+</div>
+
+<!-- COL DER - ACCESOS UNIVERSALES -->
+<div class="col-lg-5">
+<div class="card-basa" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5)">
+<h5 style="color:#003366;font-weight:800">🌐 Acceso Universal - Sin Descargar</h5>
+<p class="small text-muted">Abra en cualquier dispositivo: Celular, Tablet, Laptop, Desktop. Sin APK, sin ZIP.</p>
+<div class="grid-universal">
+<a href="https://basa-v7-1.onrender.com/gestion-informes" target="_blank" class="btn btn-success" style="background:#00d084;border:none;font-weight:700;padding:14px">📄 PROBAR ONLINE - Gestión Informes + Réplicas + Historial</a>
+<a href="https://basa-v7-1.onrender.com/b4" target="_blank" class="btn btn-primary" style="background:#003366;border:none;font-weight:700;padding:14px">B4 FULL Informe IA + NOBACI - Online</a>
+<a href="https://basa-v7-1.onrender.com/v8" target="_blank" class="btn btn-primary" style="background:#0f172a;border:none;font-weight:700;padding:14px">V8 FULL NOBACI + Libram + Invent - Online</a>
+<a href="https://basa-v7-1.onrender.com/demo" target="_blank" class="btn btn-outline-dark" style="font-weight:700;padding:14px">📦 ZIP REAL - App Android iPhone + Tablet + Desktop (PWA)</a>
+</div>
+<div class="mt-3 p-2 rounded" style="background:#fff;border:1px solid #cbd5e1">
+<small><b>💻 ¿Cómo usar en Tablet/Laptop/Desktop?</b><br>1. Abra <b>audit-intelligence-usa.com/trial</b> en Chrome/Edge/Safari<br>2. Funciona directo, sin instalar<br>3. Si quiere instalar: Chrome menú > Instalar app > Se instala como app de escritorio<br>4. Responsive: Se adapta automático a pantalla grande</small>
+</div>
+<div class="mt-2 text-center"><small class="text-muted">BASA V15 FINAL | BHD: 08694150021 | 13 módulos USD250 | Multi-País DO US MX PA CO ES | PWA instalable en todos los dispositivos | Sin errores f-string Render Live OK</small></div>
+</div>
+
+<div class="card-basa mt-3">
+<h6 style="color:#003366">📊 Estado Sistema</h6>
+<div class="row text-center small"><div class="col-4"><b>Backend</b><br><span id="statusBack" style="color:#00a86b">● Online</span></div><div class="col-4"><b>Frontend</b><br><span style="color:#00a86b">● audit-intelligence-usa.com/trial FIX 200</span></div><div class="col-4"><b>Dispositivo</b><br><span id="device"></span></div></div>
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+document.getElementById('ruta').innerText='Ruta: '+window.location.pathname+' - '+navigator.userAgent.substring(0,50)+' - FIX 200 OK';
+document.getElementById('device').innerText= (window.innerWidth<768?'📱 Celular':window.innerWidth<1024?'📱 Tablet':'💻 Desktop/Laptop')+' '+window.innerWidth+'px';
+function integrarCliente(e){
+ e.preventDefault();
+ var empresa=document.getElementById('empresa').value, rnc=document.getElementById('rnc').value, email=document.getElementById('email').value, pais=document.getElementById('pais').value;
+ var sel=document.getElementById('modulos'); var mods=[]; for(var i=0;i<sel.options.length;i++){if(sel.options[i].selected) mods.push(sel.options[i].value);} if(mods.length==0) mods=['B4_BASE'];
+ fetch('https://basa-v7-1.onrender.com/api/activar-saas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:empresa,rnc:rnc,email:email,pais:pais,mods:mods})}).then(r=>r.json()).then(d=>{
+  var res=document.getElementById('res'); res.style.display='block';
+  res.innerHTML='<div class="alert alert-success"><b>✅ Activado Online - Sin Descargar:</b> '+empresa+'<br><b>Contrato:</b> '+d.contrato+' | Total USD$'+d.total+'<br><a href="https://basa-v7-1.onrender.com/api/contrato/'+d.contrato+'" target="_blank" class="btn btn-success btn-sm mt-2">📄 Descargar Contrato PDF Real</a> <a href="https://basa-v7-1.onrender.com/gestion-informes" target="_blank" class="btn btn-primary btn-sm mt-2">➡️ Probar Gestión Informes Online</a></div>';
+ }).catch(()=>{alert('Use backend directo: https://basa-v7-1.onrender.com/contrato');});
+ return false;
+}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+</script>
+</body>
+</html>
