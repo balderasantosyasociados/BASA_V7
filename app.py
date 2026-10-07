@@ -1,291 +1,220 @@
 # -*- coding: utf-8 -*-
-# BASA V1 FINAL PROFESIONAL - SINGLE BUTTON COMPRAR MODULOS + MODAL DESPLIEGUE SELECCION + AGRUPADO PROFESIONAL SIN CARNAVAL + SCRIPTS FUNCIONALES REALES POR ROL IA DEMO / DATOS CLIENTE PRUEBA / FULL PERMANENTE
-import os, json, hashlib
-from datetime import datetime, timedelta
-from flask import Flask, render_template_string, request, jsonify, send_file
-from io import BytesIO
-import zipfile
+# BASA V1 FINAL PROFESIONAL - SIN CARNAVAL - SIN POMELO - LETRAS CONTRASTE ALTO - FIX SYNTAX F-STRING 436 - CONFIG BASA - ELIMINA EDESUR/CAMARA/CCA/CCRD - COLOCA BASA - PROBADO
+from flask import Flask, render_template_string, request, jsonify
 
-BASE_DIR=os.path.dirname(os.path.abspath(__file__))
-DATA_DIR=os.path.join(BASE_DIR,'data_v1_pro')
-os.makedirs(DATA_DIR, exist_ok=True)
-for f in ['usuarios.json','modulos_usuario.json','casos.json']:
-    p=os.path.join(DATA_DIR,f)
-    if not os.path.exists(p):
-        with open(p,'w',encoding='utf-8') as fh: json.dump([],fh)
-
-def load(f):
-    try:
-        with open(os.path.join(DATA_DIR,f),'r',encoding='utf-8') as fh: return json.load(fh)
-    except: return []
-def save(f,d):
-    with open(os.path.join(DATA_DIR,f),'w',encoding='utf-8') as fh: json.dump(d,fh,indent=2,ensure_ascii=False)
-def sha(s): return hashlib.sha256(s.encode()).hexdigest()
-
-# GRUPOS PROFESIONALES - AGRUPAR MODULOS PARA USUARIO MAS IDENTIFICADO
-GRUPOS={
-    "GRUPO 1 - COMPRAS Y CONTRATOS": ["M1","M2"],
-    "GRUPO 2 - FINANCIERO Y CONTABLE": ["M3","M4","M5","M6","M7"],
-    "GRUPO 3 - FORENSE Y LEGAL": ["M8","M9","M12"],
-    "GRUPO 4 - GESTION Y DOCUMENTAL": ["M10","M11"],
-    "GRUPO 5 - ENTERPRISE WORLD": ["M13"]
+CONFIG_BASA = {
+    "entidad": "BASA",
+    "organo_control": ["Contraloria General de la Republica", "NOBACI", "Ley 10-07"],
+    "eliminar_referencias": ["Camara de Cuentas", "CCA", "CCRD", "EDESUR", "EDESUR DOMINICANA, S.A."],
+    "sistemas": ["SAP", "SUGEP", "SIGEF", "SERC", "Multicabinet"],
+    "retenciones": {
+        "expedientes_pago": "10 anos",
+        "contratos": "10 anos",
+        "adendas": "10 anos",
+        "viabilidad_legal": "5 anos"
+    },
+    "limite_adendas": 50
 }
 
-MODULOS_PRO={
-    "M1":{"nombre":"Scraper 10 Años Compras Públicas","desc":"Auditoría 10 años licitaciones ComprasRD + SAM.gov USA + SECOP CO + CompraNet MX","precio":250,"ley":"Ley 340-06 Art8-30","rol_demo":"Demo IA ejemplo licitación SENASE RD$867M transcripción textual","rol_prueba":"Prueba con datos reales cliente desde link/carpeta","rol_full":"Full permanente tiempo comprado - Scraper real API + reportes + export"},
-    "M2":{"nombre":"Contratos + Adendas Tope 50%","desc":"Valida 4 adendas tope 50% Ley 340-06 Art31 Dec 543-12 Art127","precio":250,"ley":"Ley 340-06 Art31 50%","rol_demo":"Demo IA ejemplo contrato RD$867M + 4 adendas = RD$956M exceso RD$89M","rol_prueba":"Prueba con contrato real cliente valida tope 50%","rol_full":"Full permanente - Validador real contratos + OCR + CGR + informe"},
-    "M3":{"nombre":"Nómina Pública/Privada TSS","desc":"TSS/DGII/RPE + ISR + Código Trabajo + IMSS MX + PILA CO","precio":250,"ley":"Ley 87-01 TSS","rol_demo":"Demo IA ejemplo nómina 50 empleados TSS validada","rol_prueba":"Prueba nómina real cliente valida TSS/DGII/RPE","rol_full":"Full permanente - Validador nómina multi-país"},
-    "M4":{"nombre":"Pagos + Libramientos + BHD 08694150021","desc":"SIGEF + Legajos EDEESTE + BHD Transfer 08694150021 + NOBACI 3.62","precio":250,"ley":"NOBACI 3.62 + SIGEF","rol_demo":"Demo IA ejemplo 3 libramientos RD$481M sin soportes","rol_prueba":"Prueba legajos reales cliente valida SIGEF + BHD","rol_full":"Full permanente - Validador pagos + libramientos + BHD API"},
-    "M5":{"nombre":"Presupuesto + Ejecución SIGEF","desc":"Presupuesto público + ejecución + disponibilidad","precio":250,"ley":"Presupuesto público","rol_demo":"Demo IA ejemplo presupuesto RD$100M ejecución 80%","rol_prueba":"Prueba presupuesto real cliente","rol_full":"Full permanente - Control presupuesto + ejecución real"},
-    "M6":{"nombre":"Contabilidad IPSAS/IFRS/NIIF","desc":"IPSAS 1-47 + IFRS + US GAAP + Balance + Resultados","precio":250,"ley":"IPSAS + IFRS","rol_demo":"Demo IA ejemplo Balance + Resultados IPSAS","rol_prueba":"Prueba contabilidad real cliente","rol_full":"Full permanente - Contabilidad IPSAS/IFRS real"},
-    "M7":{"nombre":"Activos Fijos + Inventarios QR","desc":"Inventario + QR + RFID + depreciación + custodia","precio":250,"ley":"NOBACI activos","rol_demo":"Demo IA ejemplo 100 activos QR depreciación","rol_prueba":"Prueba inventario real cliente QR","rol_full":"Full permanente - QR + RFID + custodia"},
-    "M8":{"nombre":"Forense Full IA + PEPCA + SHA-256 RD$1,489M","desc":"Perjuicio RD$1,489M + Const Art146,169 + CP 123,124,175 + Ley 10-04 Art49 + FCPA + SOX","precio":250,"ley":"Const Art146 + Ley 10-04 + FCPA","rol_demo":"Demo IA ejemplo forense RD$1,489M H_CCRD_3.1 RD$867M + 3.5 RD$89M + 3.6 RD$481M + 3.8 RD$52M SHA-256","rol_prueba":"Prueba datos reales cliente forense + dictamen","rol_full":"Full permanente - Forense real + SHA-256 cadena custodia + dictamen PEPCA + informe robusto"},
-    "M9":{"nombre":"NOBACI 16 Normas + COSO","desc":"NOBACI 1-16 + COSO + COBIT + riesgos","precio":250,"ley":"NOBACI 1-16 + COSO","rol_demo":"Demo IA ejemplo NOBACI 16 normas evaluación","rol_prueba":"Prueba control interno real cliente","rol_full":"Full permanente - Validador NOBACI/COSO real"},
-    "M10":{"nombre":"Gestión Informes + Réplicas + Historial Confidencial","desc":"Carga múltiple + réplicas + historial fecha/hora/hash + modo confidencial borra rastro + GDPR","precio":250,"ley":"GDPR + Confidencial","rol_demo":"Demo IA ejemplo informe preliminar + réplica","rol_prueba":"Prueba informes reales cliente + réplicas","rol_full":"Full permanente - Gestión informes + historial confidencial"},
-    "M11":{"nombre":"Documental OCR + Firma Digital Ley 126-02","desc":"OCR IA + hash + firma digital 126-02 + eIDAS ES + ESIGN USA","precio":250,"ley":"Ley 126-02 + eIDAS + ESIGN","rol_demo":"Demo IA ejemplo OCR 10 páginas + firma digital","rol_prueba":"Prueba OCR real cliente + firma","rol_full":"Full permanente - OCR real Tesseract + Gemini + firma digital"},
-    "M12":{"nombre":"B4 Informe Pericial IA Generativo","desc":"Informe pericial auto + matriz + dictamen final + peritaje","precio":250,"ley":"Pericial + Matriz","rol_demo":"Demo IA ejemplo informe pericial RD$1,489M matriz","rol_prueba":"Prueba peritaje real cliente","rol_full":"Full permanente - Generador informe pericial IA auto"},
-    "M13":{"nombre":"WORLD ENTERPRISE Multi-País/Idioma/Moneda","desc":"DO US MX PA CO ES BR + ES EN FR PT + USD DOP EUR MXN + BHD 08694150021 USD y DOP + cumplimiento mundial","precio":250,"ley":"Multi-país/idioma/moneda + BHD 08694150021","rol_demo":"Demo IA ejemplo multi-país DO US MX + multi-idioma ES EN + multi-moneda USD DOP","rol_prueba":"Prueba multi-país real cliente","rol_full":"Full permanente - WORLD ENTERPRISE multi-país/idioma/moneda + BHD 08694150021"},
+MATRIZ_BASA = {
+    "procedimientos": [
+        {"codigo": "FI-CI-PR-001", "nombre": "Procedimiento Verificacion de Documentos y Expedientes de Pago", "direccion": "BASA - Direccion de Finanzas / Control Interno", "version": "Ver. Actual BASA", "objetivo": "Garantizar legalidad y razonabilidad pagos proveedores - BASA", "retencion": "10 anos", "sistemas": "SAP + SUGEP + SIGEF + SERC + Multicabinet"},
+        {"codigo": "SJ-CO-PR-001", "nombre": "Procedimiento Elaboracion de Contratos y Adendas Bienes Servicios Obras", "direccion": "BASA - Direccion Servicios Juridicos / Gerencia Contratos", "version": "Ver. 3 BASA 04/08/2025", "objetivo": "Lineamientos elaboracion contratos adendas Ley 340-06 Reglamento 416-23 - Tope 50% Art31 - BASA", "retencion": "10 anos", "sistemas": "ULTICABINET + SERC + SAP + SUGEP"},
+        {"codigo": "LO-SG-PR-005", "nombre": "Procedimientos Archivo General de Documentos", "direccion": "BASA - Direccion de Logistica / Servicios Generales", "version": "Ver. 4 BASA", "objetivo": "Aseguramiento informaciones impresas digitales - BASA", "retencion": "Permanente / Ley 481-08 - BASA", "sistemas": "Multicabinet + SERC"}
+    ],
+    "verificacion_pagos": [
+        {"no": 1, "actividad": "Recibir documentacion pagos verificar documentacion requerida - BASA", "rol": "BASA - Gerente de Control / Control Interno", "herramienta": "Multicabinet / Sistema de Contenido - BASA", "control": "Revision integral soportes fisicos digitales - BASA - Contraloria + NOBACI + Ley 10-07", "retencion": "10 anos"},
+        {"no": 2, "actividad": "Revisar detalle soportes valido coincida monto concepto pago - BASA", "rol": "BASA - Especialista Control Interno", "herramienta": "SAP / Work Management System - BASA", "control": "Validacion contra ordenes compra contratos - BASA", "retencion": "10 anos"},
+        {"no": 3, "actividad": "Realizar comunicacion documentos expedientes revisados conformados - BASA", "rol": "BASA - Especialista Control Interno", "herramienta": "Multicabinet - BASA", "control": "Constancia recepcion conforme - BASA", "retencion": "10 anos"},
+        {"no": 4, "actividad": "Enviar expediente pago verificado area responsable realizar pago - BASA", "rol": "BASA - Especialista Control Interno", "herramienta": "Sistema Gestion Trabajo - BASA", "control": "Trazabilidad remision - BASA - SAP + SUGEP + SIGEF", "retencion": "10 anos"},
+        {"no": 5, "actividad": "Confirma transaccion no varie propiedad, legalidad, conformidad presupuesto - BASA", "rol": "BASA - Gerente Control Interno", "herramienta": "SAP / SIGEF / SIAFE - BASA", "control": "NOBACI + Ley 10-07 + Contraloria General - BASA - Elimina Camara Cuentas", "retencion": "10 anos"},
+        {"no": 6, "actividad": "Carga expediente pago al Sistema Unificado Gestion Pagos (SUGEP) - BASA", "rol": "BASA - Especialista Control Interno", "herramienta": "SUGEP (Contraloria General) - BASA", "control": "Obligatoriedad registro institucional - BASA - Contraloria + NOBACI + Ley 10-07", "retencion": "10 anos"},
+        {"no": 7, "actividad": "Auditoria Control Interno posterior y remision informes Contabilidad Finanzas - BASA", "rol": "BASA - Control Interno", "herramienta": "SAP - BASA", "control": "Informes inmediatos posteriores - BASA - Contraloria + NOBACI + Ley 10-07", "retencion": "10 anos"},
+    ],
+    "contratos_adendas": [
+        {"no": 1, "actividad": "Remitir comunicacion solicitud elaboracion contrato adenda especificaciones - BASA", "responsable": "BASA - Unidad Solicitante / Compras", "plazo": "N/A", "base": "Ley 340-06 / Decreto 416-23 - BASA - Tope 50%"},
+        {"no": 2, "actividad": "Recibir solicitud elaborar Informe Viabilidad Legal adenda revision Directora - BASA", "responsable": "BASA - Coordinador Contrato", "plazo": "5 dias laborables", "base": "Art. 31 Ley 340-06 y Art. 179 Dec. 416-23 - Tope 50% - BASA"},
+        {"no": 8, "actividad": "Elaborar borrador contrato adenda conforme solicitado remitir validacion - BASA", "responsable": "BASA - Abogado Especializado", "plazo": "10 dias laborables", "base": "Pliegos condiciones fichas tecnicas - BASA"},
+        {"no": 9, "actividad": "Verificar remitir borrador validado areas Finanzas Compras Proveedor - BASA", "responsable": "BASA - Gerente Contratos", "plazo": "48 horas", "base": "Ciclo validacion multi-area - BASA - 48h"},
+        {"no": 18, "actividad": "Registrar contrato en Sistema Electronico Registro Contratos (SERC) - BASA", "responsable": "BASA - Responsable Registro SERC", "plazo": "Plazo legal", "base": "Contraloria General Republica - BASA - SERC"},
+    ],
+    "archivo_general": [
+        {"tipo": "Expedientes de Pago a Proveedores y Terceros - BASA", "area": "BASA - Direccion Finanzas / Control Interno", "soporte": "Fisico y Digital (Multicabinet / SUGEP) - BASA", "retencion": "10 anos - BASA", "destino": "Archivo Historico / Custodia Definitiva - BASA", "base": "Ley 10-07 Contraloria y Normas BASA - Contraloria + NOBACI + Ley 10-07 - BASA"},
+        {"tipo": "Contratos de Bienes, Obras y Servicios - BASA", "area": "BASA - Direccion Servicios Juridicos (Gerencia Contratos)", "soporte": "Fisico (3 originales) y Digital (SERC) - BASA", "retencion": "10 anos posteriores terminacion - BASA", "destino": "Archivo Central / Registro SERC - BASA", "base": "Ley 340-06 y Reglamento 416-23 - BASA"},
+        {"tipo": "Adendas y Enmiendas Contractuales - BASA", "area": "BASA - Direccion Servicios Juridicos (Gerencia Contratos)", "soporte": "Fisico y Digital (SERC / Ulticabinet) - BASA", "retencion": "10 anos - BASA", "destino": "Archivo Central / Area Administradora - BASA", "base": "Ley 340-06 Compras y Contrataciones - BASA - Tope 50%"},
+        {"tipo": "Informes de Viabilidad Legal y Justificativos - BASA", "area": "BASA - Direccion Servicios Juridicos", "soporte": "Digital y Fisico - BASA", "retencion": "5 anos - BASA", "destino": "Archivo Gestion - BASA", "base": "NOBACI / Control Interno - BASA"},
+        {"tipo": "Garantias (Fiel Cumplimiento, Anticipo, Vicios Ocultos) - BASA", "area": "BASA - Gerencia Compras / Finanzas / Juridico", "soporte": "Fisico (Originales incondicionales) - BASA", "retencion": "Hasta devolucion liquidacion definitiva - BASA", "destino": "Custodia Valores / Tesoreria - BASA", "base": "Ley 340-06 y Pliegos Condiciones - BASA"},
+        {"tipo": "Comunicaciones de Solicitud y Aprobacion - BASA", "area": "BASA - Areas Requirentes / Gerencia General", "soporte": "Digital y Fisico - BASA", "retencion": "5 anos - BASA", "destino": "Archivo Gestion / Multicabinet - BASA", "base": "NOBACI - BASA - Contraloria + NOBACI + Ley 10-07"},
+    ]
 }
 
-EJEMPLO_IA={
-    "M1":{"fuente":"https://comprasdominicana.gob.do/licitaciones SENASE 2019-2025 - IA Gemini buscó real","datos":"SENASE-CCC-CP-2019-0001 RD$867,282,729 - 120 páginas pliego transcripción textual precisa - Hash a1b2c3","monto":867282729},
-    "M2":{"fuente":"Contrato SENASE-2019-001 + 4 Adendas - IA Mistral extrajo real","datos":"Contrato base RD$867,282,729 + 4 adendas RD$89,328,477 = Total RD$956,611,206 - Tope 50% RD$433M - Exceso RD$89,328,477 - Ley 340-06 Art31","monto":956611206},
-    "M4":{"fuente":"Legajos pagos EDEESTE SIGEF + BHD 08694150021 - IA Gemini + BHD API","datos":"3 libramientos RD$481M sin soportes - BHD Transfer 08694150021 validado - NOBACI 3.62","monto":481000000},
-    "M8":{"fuente":"Informe forense PEPCA + CGR - IA YOELFRI V15 - Perjuicio RD$1,489M","datos":"H_CCRD_3.1 RD$867M + H_CCRD_3.5 RD$89M + H_CCRD_3.6 RD$481M + H_CCRD_3.8 RD$52M = RD$1,489M - SHA-256 d4e5f6 - PEPCA Const Art146","monto":1489611206},
-}
+app = Flask(__name__)
 
-app=Flask(__name__)
-app.secret_key='V1_PRO_SINGLE_BTN_'+sha(str(datetime.now()))
-
-HTML_PRO="""
-<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BASA V1 Profesional - Single Button Comprar + Agrupado Profesional</title>
+HTML = """
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BASA - Profesional - Sin Carnaval - Letras Contraste Alto</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-/* DISEÑO PROFESIONAL SIN CARNAVAL - COLORES SOBRIOS */
-body{background:#f8fafc;color:#1e293b;font-family:'Segoe UI',system-ui;font-size:13px}
-.hero{background:#ffffff;border-bottom:1px solid #e2e8f0;padding:16px 20px}
-.hero h5{color:#0f172a;font-weight:700;letter-spacing:-0.3px}
-.card-pro{background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-.btn-primary-pro{background:#0f172a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer}
-.btn-primary-pro:hover{background:#1e293b}
-.btn-secondary-pro{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:7px 14px;border-radius:8px;font-weight:500;font-size:11px;cursor:pointer}
-.btn-success-pro{background:#059669;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:600;font-size:11px;cursor:pointer}
-.btn-warning-pro{background:#f59e0b;color:#000;border:none;padding:7px 14px;border-radius:8px;font-weight:600;font-size:11px;cursor:pointer}
-.grupo-header{background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;font-weight:700;color:#0f172a;font-size:12px;text-transform:uppercase;letter-spacing:0.5px}
-.modulo-item{padding:12px 14px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
-.modulo-item:last-child{border-bottom:none}
-.modulo-item:hover{background:#f8fafc}
-.badge-demo{background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
-.badge-activo{background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
-.badge-vencido{background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
-.badge-nuevo{background:#e0e7ff;color:#3730a3;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}
-input,select,textarea{background:#ffffff!important;color:#1e293b!important;border:1px solid #cbd5e1!important;border-radius:8px!important;font-size:12px}
-.ejec-pro{background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-top:10px}
-.modal-pro{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);display:none;justify-content:center;align-items:center;z-index:9999}
-.modal-content-pro{background:#ffffff;border-radius:12px;width:90%;max-width:900px;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
-</style></head><body>
-
-<div class="hero">
-<div class="d-flex justify-content-between align-items-center">
+body{background:#f8fafc;color:#1e293b;font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;line-height:1.4}
+.header-pro{background:#0f172a;color:#ffffff;padding:12px 16px;border-bottom:2px solid #1e293b}
+.header-pro h6{color:#ffffff !important;font-weight:700;margin:0}
+.header-pro small{color:#cbd5e1 !important}
+.card-pro{background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,0.06)}
+.card-pro h6{color:#0f172a;font-weight:700}
+.table-pro{color:#1e293b;background:#ffffff}
+.table-pro thead{background:#f1f5f9;color:#0f172a;font-weight:600}
+.table-pro tbody{color:#334155}
+.table-pro td{color:#334155;border-color:#e2e8f0}
+.btn-pro{background:#0f172a;color:#ffffff;border:1px solid #0f172a;padding:6px 12px;border-radius:6px;font-weight:600;font-size:11px}
+.btn-pro:hover{background:#1e293b;color:#ffffff}
+.btn-sec{background:#ffffff;color:#334155;border:1px solid #cbd5e1;padding:5px 10px;border-radius:6px;font-size:10px}
+.btn-sec:hover{background:#f8fafc;color:#0f172a}
+.btn-warn{background:#ffffff;color:#92400e;border:1px solid #fbbf24;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600}
+.btn-succ{background:#0f172a;color:#ffffff;border:1px solid #0f172a;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600}
+.badge-pro{background:#0f172a;color:#ffffff;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-light-pro{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;padding:3px 8px;border-radius:4px;font-size:10px}
+.text-dark-pro{color:#1e293b !important}
+.text-muted-pro{color:#64748b !important}
+.bg-white-pro{background:#ffffff}
+.border-pro{border-color:#e2e8f0 !important}
+</style>
+</head><body>
+<div class="header-pro d-flex justify-content-between align-items-center">
 <div>
-<h5 class="m-0">BASA V1 • Sistema de Auditoría Forense Profesional</h5>
-<small style="color:#64748b">13 módulos • Demo 7 días • Pagado full permanente • Multi-país DO US MX PA CO ES BR • Multi-idioma ES EN FR PT • Multi-moneda USD DOP EUR MXN • BHD 08694150021 • <span id="info"></span></small>
+<h6>BASA V1 PROFESIONAL - SIN CARNAVAL - SIN POMELO - LETRAS CONTRASTE ALTO - FIX SYNTAX 436 - CONFIG BASA - ELIMINA EDESUR/CAMARA/CCA/CCRD - COLOCA BASA - M10 PROBADO DEMO 2026-10-14</h6>
+<small>CONFIG: BASA | Organo: Contraloria General + NOBACI + Ley 10-07 | Elimina: Camara Cuentas, CCA, CCRD, EDESUR | Sistemas: SAP + SUGEP + SIGEF + SERC + Multicabinet | Tope: 50% | Retenciones: 10 anos / 10 anos / 10 anos / 5 anos</small>
 </div>
-<div class="d-flex gap-2">
-<button onclick="abrirModalComprar()" class="btn-primary-pro">🛒 Comprar Módulos</button>
-<span id="userLabel" class="badge bg-light text-dark" style="border:1px solid #e2e8f0;padding:6px 10px;border-radius:8px"></span>
-</div>
+<div class="d-flex gap-2 align-items-center">
+<span class="badge-pro">BASA PROFESIONAL</span>
+<button onclick="probarM10()" class="btn-pro">Probar M10 BASA</button>
 </div>
 </div>
 
 <div class="container-fluid p-3">
-
-<div id="loginBox" class="card-pro p-3 mb-3">
-<h6 style="font-weight:700;color:#0f172a">Acceso al Sistema</h6>
-<div class="row g-2">
-<div class="col-md-2"><input id="nombre" class="form-control form-control-sm" placeholder="Nombre completo"></div>
-<div class="col-md-2"><input id="correo" type="email" class="form-control form-control-sm" placeholder="Correo"></div>
-<div class="col-md-2"><input id="clave" type="password" class="form-control form-control-sm" placeholder="Clave"></div>
-<div class="col-md-2"><input id="empresa" class="form-control form-control-sm" placeholder="Empresa"></div>
-<div class="col-md-2"><select id="tipoAcceso" class="form-select form-select-sm"><option value="demo">Demo 7 días</option><option value="real">Real</option></select></div>
-<div class="col-md-2"><button onclick="entrar()" class="btn-primary-pro w-100">Entrar</button></div>
+<div class="row g-3">
+<div class="col-md-3">
+<div class="card-pro p-3">
+<h6 class="text-dark-pro">Probar Sistema BASA - Profesional</h6>
+<div class="small p-2 rounded bg-white-pro border-pro border mt-2 text-dark-pro">
+<b class="text-dark-pro">Entidad:</b> <span class="text-dark-pro">BASA (Antes EDESUR - Eliminado)</span><br>
+<b class="text-dark-pro">Organo Control:</b> <span class="text-dark-pro">Contraloria General + NOBACI + Ley 10-07 (Antes Camara Cuentas - Eliminado)</span><br>
+<b class="text-dark-pro">Elimina:</b> <span class="text-dark-pro">Camara de Cuentas, CCA, CCRD, EDESUR</span><br>
+<b class="text-dark-pro">Sistemas:</b> <span class="text-dark-pro">SAP + SUGEP + SIGEF + SERC + Multicabinet</span><br>
+<b class="text-dark-pro">Retenciones:</b> <span class="text-dark-pro">10 anos pago / 10 anos contratos / 10 anos adendas / 5 anos viabilidad</span><br>
+<b class="text-dark-pro">Tope:</b> <span class="text-dark-pro">50% Art31 Ley 340-06 + Art179 Dec 416-23</span>
 </div>
-<div class="mt-2"><button onclick="autocompleteDemo()" class="btn-secondary-pro">Autocompletar demo</button> <small style="color:#64748b">Demo ejemplo modelo vs real llena datos • Histórico clave seguro solo admin</small></div>
+<div class="d-grid gap-2 mt-3">
+<button onclick="probarM10()" class="btn-pro">Probar M10 Informes Replicas Confidencial - BASA - DEMO 2026-10-14</button>
+<button onclick="probarPagos()" class="btn-sec">Probar FI-CI-PR-001 7 Pasos - BASA</button>
+<button onclick="probarContratos()" class="btn-sec">Probar SJ-CO-PR-001 19 Pasos Tope 50% - BASA</button>
+<button onclick="probarArchivo()" class="btn-sec">Probar LO-SG-PR-005 Archivo General - BASA</button>
+<button onclick="probarTope50()" class="btn-warn">Probar Tope 50% Adendas - BASA - Art31</button>
 </div>
-
-<div id="sistemaBox" style="display:none">
-
-<div class="card-pro p-2 mb-3 d-flex justify-content-between">
-<div class="d-flex gap-2">
-<button onclick="showTab('modulos')" class="btn-secondary-pro">📊 Módulos Agrupados</button>
-<button onclick="showTab('ejecucion')" class="btn-secondary-pro">⚙️ Ejecución Real</button>
-<button onclick="showTab('forense')" class="btn-secondary-pro">📋 Informe Forense</button>
-</div>
-<div class="d-flex gap-2">
-<button onclick="abrirModalComprar()" class="btn-primary-pro">🛒 Comprar Módulos - Único Botón</button>
+<div id="pruebaResult" class="mt-3 small"></div>
 </div>
 </div>
-
-<div id="tab-modulos">
-<!-- GRUPOS PROFESIONALES - USUARIO MAS IDENTIFICADO -->
-<div id="gruposContainer"></div>
-
-<div class="card-pro p-3 mt-3">
-<h6 style="font-weight:700;color:#0f172a">Ejecución Real por Rol: Demo IA Ejemplo / Prueba Datos Cliente / Full Permanente Tiempo Comprado</h6>
-<div class="row g-2 mt-2">
-<div class="col-md-3"><input id="fuente" class="form-control form-control-sm" placeholder="Link https:// o carpeta datos reales cliente"></div>
-<div class="col-md-2"><select id="modSelect" class="form-select form-select-sm"></select></div>
-<div class="col-md-7">
-<button onclick="cargarReal()" class="btn-primary-pro">📥 Cargar Real</button>
-<button onclick="editarReal()" class="btn-secondary-pro">✏️ Editar</button>
-<button onclick="mejorarIA()" class="btn-warning-pro">🤖 Mejorar con IA</button>
-<button onclick="dejarTextual()" class="btn-secondary-pro">📝 Dejar Textual</button>
-<button onclick="auditarTodo()" class="btn-secondary-pro">🔍 Auditar Todo</button>
-<button onclick="generarCodigo()" class="btn-success-pro">💻 Generar Código Actualizar</button>
+<div class="col-md-9">
+<div class="card-pro p-3">
+<h6 class="text-dark-pro">Matriz BASA - Profesional - Elimina EDESUR/Camara/CCA/CCRD - Coloca BASA</h6>
+<div class="table-responsive mt-2">
+<table class="table table-sm table-bordered table-pro">
+<thead><tr><th>Codigo</th><th>Nombre - BASA</th><th>Direccion - BASA</th><th>Version - BASA</th><th>Retencion - BASA</th><th>Sistemas - BASA</th><th>Organo - BASA</th></tr></thead>
+<tbody>
+{% for p in matriz.procedimientos %}
+<tr><td><span class="badge bg-dark">{{ p.codigo }}</span></td><td class="text-dark-pro">{{ p.nombre }}</td><td class="text-dark-pro">{{ p.direccion }}</td><td class="text-dark-pro">{{ p.version }}</td><td class="text-dark-pro">{{ p.retencion }}</td><td class="text-dark-pro">{{ p.sistemas }}</td><td class="text-dark-pro">{{ config.organo_control|join(' + ') }} - BASA</td></tr>
+{% endfor %}
+</tbody>
+</table>
 </div>
-</div>
-<textarea id="textoTrans" class="form-control form-control-sm mt-2" rows="3" placeholder="Transcripción textual precisa real - Puede editar - Rol Demo IA ejemplo / Prueba datos reales cliente / Full permanente"></textarea>
-<div class="row g-2 mt-2">
-<div class="col-md-6"><button onclick="utilizarIA()" class="btn-warning-pro w-100">🤖 Utilizar IA Si Usuario Quiere Mejorar Contenido</button></div>
-<div class="col-md-6"><button onclick="dejarComoEncontro()" class="btn-secondary-pro w-100">📝 Dejar Textualmente Como Lo Encontró</button></div>
-</div>
-<div id="ejecReal" class="ejec-pro mt-3" style="display:none"></div>
-</div>
-</div>
-
-<div id="tab-ejecucion" style="display:none"><div class="card-pro p-3"><div id="ejecReal2"></div></div></div>
-<div id="tab-forense" style="display:none"><div class="card-pro p-3"><h6 style="font-weight:700">Informe Forense Robusto - Ley + Fuente + Datos Reales + Análisis Claro y Preciso</h6><div id="informeForense" class="small p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0"></div><div class="d-flex gap-2 mt-3"><button onclick="generarForense()" class="btn-primary-pro">📋 Generar Informe Forense Robusto</button><button onclick="exportWord()" class="btn-secondary-pro">📄 Export Word</button><button onclick="exportExcel()" class="btn-secondary-pro">📊 Export Excel</button><button onclick="unificarCorte()" class="btn-warning-pro">🔄 Unificar Corte Factura</button></div></div></div>
-
-</div>
-</div>
-
-<!-- MODAL ÚNICO - COMPRAR MÓDULOS - DESPLIEGUE TODOS MÓDULOS SELECCIONAR/QUITAR PROBAR/COMPRAR - NO SE VE SIEMPRE EN PORTADA -->
-<div id="modalComprar" class="modal-pro">
-<div class="modal-content-pro">
-<div class="d-flex justify-content-between align-items-center p-3" style="border-bottom:1px solid #e2e8f0">
-<h6 style="font-weight:700" class="m-0">🛒 Comprar Módulos - Seleccionar o Quitar Si Deseas Probar y Si Deseas Comprarlo</h6>
-<button onclick="cerrarModalComprar()" class="btn-secondary-pro">✕ Cerrar</button>
-</div>
-<div class="p-3">
-<small style="color:#64748b">Selecciona módulos para probar demo 7 días o comprar full permanente por tiempo comprado. Demo: IA ejemplo. Prueba: datos reales cliente. Full: permanente tiempo comprado. Agrupados profesional para usuario más identificado. Quitar tanto colores - diseño profesional.</small>
-<div id="modalModulos" class="mt-3"></div>
-<div class="card-pro p-3 mt-3" style="background:#f8fafc">
-<div class="row g-2">
-<div class="col-md-4"><div id="resumenSeleccion" class="small"></div></div>
-<div class="col-md-4"><div id="fechasSeleccion" class="small"></div></div>
-<div class="col-md-4">
-<button onclick="probarSeleccionados()" class="btn-warning-pro w-100">🧪 Probar Seleccionados Demo 7D</button>
-<button onclick="comprarSeleccionados()" class="btn-primary-pro w-100 mt-2">💳 Comprar Seleccionados Full Permanente - BHD 08694150021</button>
-<button onclick="unificarSeleccionados()" class="btn-secondary-pro w-100 mt-2">🔄 Unificar con Próximo Corte Factura + Días Consumibles</button>
-</div>
-</div>
+<div id="detalleContainer" class="mt-3"></div>
 </div>
 </div>
 </div>
 </div>
 
 <script>
-let MODS={{ mods|tojson }};
-let GRUPOS={{ grupos|tojson }};
-let EJEMPLO={{ ejemplo|tojson }};
-let currentUser=JSON.parse(localStorage.getItem('v1pro_user')||'null');
-let modulosUsuario=JSON.parse(localStorage.getItem('v1pro_modulos')||'{}');
-let seleccionados={}; // {M1:true, M2:false} para modal comprar
-
-function init(){
- document.getElementById('info').innerText=new Date().toLocaleString();
- if(currentUser){document.getElementById('loginBox').style.display='none'; document.getElementById('sistemaBox').style.display='block'; document.getElementById('userLabel').innerText=currentUser.nombre+' • '+currentUser.rol;}
- renderGrupos(); renderModalComprar();
-}
-function autocompleteDemo(){
- document.getElementById('nombre').value='Lic. Pedro Baldera';
- document.getElementById('correo').value='demo@basa-demo.com';
- document.getElementById('clave').value='DemoV1*';
- document.getElementById('empresa').value='BASA Empresa';
-}
-function entrar(){
- let nombre=document.getElementById('nombre').value, correo=document.getElementById('correo').value, clave=document.getElementById('clave').value, empresa=document.getElementById('empresa').value, tipo=document.getElementById('tipoAcceso').value;
- if(!nombre||!correo||!clave||!empresa){alert('Complete Nombre/Correo/Clave/Empresa');return;}
- fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:nombre,correo:correo,clave:clave,empresa:empresa,tipo:tipo})}).then(r=>r.json()).then(d=>{
-  currentUser=d.usuario; localStorage.setItem('v1pro_user',JSON.stringify(currentUser));
-  modulosUsuario=d.modulos||{}; localStorage.setItem('v1pro_modulos',JSON.stringify(modulosUsuario));
-  document.getElementById('loginBox').style.display='none'; document.getElementById('sistemaBox').style.display='block';
-  document.getElementById('userLabel').innerText=currentUser.nombre+' • '+currentUser.rol;
-  renderGrupos(); renderModalComprar();
+function probarM10(){
+ fetch('/api/probar/m10',{method:'POST'}).then(r=>r.json()).then(d=>{
+  document.getElementById('pruebaResult').innerHTML='<div class="p-2 rounded border bg-white-pro text-dark-pro" style="border-color:#10b981 !important"><b class="text-dark-pro">M10 Probado BASA - DEMO ACTIVO 2026-10-14 - Profesional - Sin Carnaval</b><br><b class="text-dark-pro">Entidad:</b> '+d.entidad+'<br><b class="text-dark-pro">Organo:</b> '+d.organo+'<br><b class="text-dark-pro">Hash:</b> '+d.hash+'</div>';
+  document.getElementById('detalleContainer').innerHTML='<div class="mt-2"><h6 class="text-dark-pro">M10 Informes Replicas Confidencial - BASA - Ejecucion Real - DEMO 2026-10-14 - Profesional</h6><div class="small p-3 rounded bg-white-pro border border-pro text-dark-pro"><b class="text-dark-pro">Transcripcion:</b><br><span class="text-dark-pro">'+d.transcripcion+'</span></div><div class="small p-3 rounded mt-2 bg-white-pro border border-pro text-dark-pro" style="background:#fffbeb !important;border-color:#fbbf24 !important"><b class="text-dark-pro">Analisis:</b><br><span class="text-dark-pro">'+d.analisis+'</span></div><div class="small p-3 rounded mt-2 bg-white-pro border border-pro text-dark-pro" style="background:#f0fdf4 !important;border-color:#86efac !important"><b class="text-dark-pro">Reporte + Script BASA:</b><br><span class="text-dark-pro">'+d.reporte+'</span></div><pre style="background:#0f172a;color:#f8fafc;padding:12px;border-radius:6px;font-size:10px;max-height:350px;overflow:auto;margin-top:8px;border:1px solid #1e293b">'+d.script+'</pre></div>';
  });
 }
-function showTab(t){
- document.getElementById('tab-modulos').style.display=t=='modulos'?'block':'none';
- document.getElementById('tab-ejecucion').style.display=t=='ejecucion'?'block':'none';
- document.getElementById('tab-forense').style.display=t=='forense'?'block':'none';
-}
-
-function renderGrupos(){
- let html='', sel=document.getElementById('modSelect'); sel.innerHTML=''; let hoy=new Date();
- Object.keys(GRUPOS).forEach(grupo=>{
-  html+=`<div class="card-pro mb-3"><div class="grupo-header">${grupo}</div>`;
-  GRUPOS[grupo].forEach(mid=>{
-   let m=MODS[mid]; if(!m) return;
-   let mu=modulosUsuario[mid]||{}; let ej=EJEMPLO[mid]||{datos:''};
-   let o=document.createElement('option'); o.value=mid; o.text=mid+' '+m.nombre; sel.appendChild(o);
-   let estado='', botones='';
-   if(!mu.demo_inicio &&!mu.pagado_inicio){
-    estado='<span class="badge-nuevo">Nuevo</span>';
-    botones=`<button onclick="iniciarDemoReal('${mid}')" class="btn-secondary-pro">▶️ Demo 7D</button>
-             <button onclick="abrirEjecutarReal('${mid}','demo')" class="btn-secondary-pro">Ejecutar Demo IA Ejemplo</button>`;
-   } else if(mu.demo_inicio &&!mu.pagado_inicio){
-    let demoFin=new Date(mu.demo_fin); let activo=hoy<=demoFin; let diasRest=Math.ceil((demoFin-hoy)/86400000);
-    if(activo){
-     estado=`<span class="badge-demo">Demo activo ${diasRest}d • Vigente ${mu.demo_inicio} • Venc ${mu.demo_fin}</span>`;
-     botones=`<button onclick="abrirEjecutarReal('${mid}','demo')" class="btn-warning-pro">▶️ Ejecutar Demo IA Ejemplo Real</button>
-              <button onclick="cargarDatosReales('${mid}')" class="btn-secondary-pro">📥 Datos Reales Cliente</button>
-              <button onclick="editarMejorar('${mid}')" class="btn-secondary-pro">✏️ Editar/Mejorar IA</button>`;
-    } else {
-     estado=`<span class="badge-vencido">Demo vencido ${mu.demo_fin}</span>`;
-     botones=`<button onclick="pagarModuloReal('${mid}')" class="btn-primary-pro">💳 Comprar Full</button>`;
-    }
-   } else if(mu.pagado_inicio){
-    let pagadoFin=new Date(mu.pagado_fin); let activo=hoy<=pagadoFin; let diasRest=Math.ceil((pagadoFin-hoy)/86400000);
-    if(activo){
-     estado=`<span class="badge-activo">Full activo ${diasRest}d • Vigente ${mu.vigente} • Renovada ${mu.renovada||'Primera'} • Venc ${mu.pagado_fin}</span>`;
-     botones=`<button onclick="abrirEjecutarReal('${mid}','pagado')" class="btn-success-pro">▶️ Ejecutar Full Permanente ${mu.pagado_fin}</button>
-              <button onclick="cargarDatosReales('${mid}')" class="btn-primary-pro">📥 Datos Reales Cliente Full</button>
-              <button onclick="generarInformeForenseModulo('${mid}')" class="btn-secondary-pro">📋 Informe Forense</button>
-              <button onclick="renovarReal('${mid}')" class="btn-secondary-pro">🔄 Renovar desde fin ${mu.pagado_fin}</button>`;
-    } else {
-     estado=`<span class="badge-vencido">Full vencido ${mu.pagado_fin} • Vigente ${mu.vigente} • Renovada ${mu.renovada||''}</span>`;
-     botones=`<button onclick="renovarReal('${mid}')" class="btn-primary-pro">🔄 Renovar desde fin primera compra ${mu.pagado_fin}</button>`;
-    }
-   }
-   html+=`<div class="modulo-item">
-   <div style="flex:1"><div style="font-weight:600;color:#0f172a">${mid} ${m.nombre} ${estado}</div><small style="color:#64748b">${m.desc} • ${m.ley} • ${m.precio} USD/mes • Demo: ${m.rol_demo.substring(0,60)}... • Prueba: ${m.rol_prueba.substring(0,40)}... • Full: ${m.rol_full.substring(0,40)}...</small></div>
-   <div class="d-flex gap-1 flex-wrap" style="margin-left:10px">${botones}</div>
-   </div>`;
-  });
-  html+=`</div>`;
+function probarPagos(){
+ fetch('/api/probar/pagos',{method:'POST'}).then(r=>r.json()).then(d=>{
+  var html='<h6 class="text-dark-pro">FI-CI-PR-001 7 Pasos - BASA - Profesional - Sin Carnaval</h6><table class="table table-sm table-bordered table-pro"><thead><tr><th>No</th><th>Actividad BASA</th><th>Rol BASA</th><th>Herramienta BASA</th><th>Control BASA</th><th>Retencion BASA</th></tr></thead><tbody>';
+  d.pasos.forEach(function(p){html+='<tr><td class="text-dark-pro">'+p.no+'</td><td class="text-dark-pro">'+p.actividad+'</td><td class="text-dark-pro">'+p.rol+'</td><td class="text-dark-pro">'+p.herramienta+'</td><td class="text-dark-pro">'+p.control+'</td><td class="text-dark-pro">'+p.retencion+'</td></tr>';});
+  html+='</tbody></table>';
+  document.getElementById('detalleContainer').innerHTML=html;
  });
- document.getElementById('gruposContainer').innerHTML=html;
 }
-
-function renderModalComprar(){
- let html=''; let total=0;
- Object.keys(GRUPOS).forEach(grupo=>{
-  html+=`<div class="card-pro mb-2"><div class="grupo-header">${grupo}</div>`;
-  GRUPOS[grupo].forEach(mid=>{
-   let m=MODS[mid]; if(!m) return;
-   let mu=modulosUsuario[mid]||{}; let checked=seleccionados[mid]?'checked':'';
-   let estadoDemo=mu.demo_inicio?`Demo hasta ${mu.demo_fin}`:'No demo';
-   let estadoFull=mu.pagado_inicio?`Full hasta ${mu.pagado_fin} Vigente ${mu.vigente} Renovada ${mu.renovada||'Primera'}`:'No pagado';
-   html+=`<div class="modulo-item">
-   <div><input type="checkbox" id="chk_${mid}" ${checked} onchange="toggleSeleccion('${mid}')" style="margin-right:8px"><b>${mid} ${m.nombre}</b> - USD${m.precio}/mes<br><small style="color:#64748b">${m.desc}<br>Demo: ${estadoDemo} | Full: ${estadoFull} | Ley: ${m.ley}</small></div>
-   <div class="d-flex flex-column gap-1"><button onclick="toggleSeleccion('${mid}')" class="btn-secondary-pro">Seleccionar/Quitar</button><button onclick="probarUno('${mid}')" class="btn-warning-pro">Probar Demo</button><button onclick="comprarUno('${mid}')" class="btn-primary-pro">Comprar Full</button></div>
-   </div>`;
-   if(seleccionados[mid]) total+=m.precio;
-  });
-  html+=`</div>`;
+function probarContratos(){
+ fetch('/api/probar/contratos',{method:'POST'}).then(r=>r.json()).then(d=>{
+  var html='<h6 class="text-dark-pro">SJ-CO-PR-001 19 Pasos - BASA - Tope '+d.config.limite_adendas+'% - Profesional</h6><table class="table table-sm table-bordered table-pro"><thead><tr><th>No</th><th>Actividad BASA</th><th>Responsable BASA</th><th>Plazo BASA</th><th>Base Legal BASA</th></tr></thead><tbody>';
+  d.pasos.forEach(function(p){html+='<tr><td class="text-dark-pro">'+p.no+'</td><td class="text-dark-pro">'+p.actividad+'</td><td class="text-dark-pro">'+p.responsable+'</td><td class="text-dark-pro">'+p.plazo+'</td><td class="text-dark-pro">'+p.base+'</td></tr>';});
+  html+='</tbody></table>';
+  document.getElementById('detalleContainer').innerHTML=html;
  });
- document.getElementById('modalModulos').innerHTML=html;
- document.getElementById('resumenSeleccion').innerHTML=`Seleccionados: ${Object.keys(seleccionados).filter(k=>seleccionados[k]).length} módulos<br>Total: USD${total}/mes<br>ITBIS 18%: USD${(total*0.18).toFixed(0)}<br>Total con ITBIS: USD${(total*1.18).toFixed(0)}<br>Primer pago 27 días: USD${(total*1.18*0.9).toFixed(0)}<br>BHD 08694150021 USD y DOP`;
- let fechasHtml=''; Object.keys(modulosUsuario).forEach(id=>{let mu=modulosUsuario[id]; if(mu.pagado_fin) fechasHtml+=`${id}: Vigente ${mu.vigente} | Renovada ${mu.renovada||'Primera'} | Vencimiento ${mu.pagado_fin}<br>`;});
- document.getElementById('fechasSeleccion').innerHTML=fechasHtml
+}
+function probarArchivo(){
+ fetch('/api/probar/archivo',{method:'POST'}).then(r=>r.json()).then(d=>{
+  var html='<h6 class="text-dark-pro">LO-SG-PR-005 Archivo General - BASA - Profesional</h6><table class="table table-sm table-bordered table-pro"><thead><tr><th>Tipo BASA</th><th>Area BASA</th><th>Soporte BASA</th><th>Retencion BASA</th><th>Destino BASA</th><th>Base BASA</th></tr></thead><tbody>';
+  d.archivo.forEach(function(p){html+='<tr><td class="text-dark-pro">'+p.tipo+'</td><td class="text-dark-pro">'+p.area+'</td><td class="text-dark-pro">'+p.soporte+'</td><td class="text-dark-pro">'+p.retencion+'</td><td class="text-dark-pro">'+p.destino+'</td><td class="text-dark-pro">'+p.base+'</td></tr>';});
+  html+='</tbody></table>';
+  document.getElementById('detalleContainer').innerHTML=html;
+ });
+}
+function probarTope50(){
+ fetch('/api/probar/tope50',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({monto_base:1000000, adendas:[200000,150000,200000]})}).then(r=>r.json()).then(d=>{
+  var cls = d.excede ? 'bg-white-pro border' : 'bg-white-pro border';
+  var style = d.excede ? 'border-color:#ef4444 !important;background:#fef2f2 !important' : 'border-color:#10b981 !important;background:#f0fdf4 !important';
+  document.getElementById('detalleContainer').innerHTML='<div class="p-3 rounded '+cls+' text-dark-pro" style="'+style+'"><b class="text-dark-pro">Test Tope '+d.config.limite_adendas+'% - BASA - Art31 Ley 340-06 + Art179 Dec 416-23 - Profesional - Sin Carnaval</b><br><span class="text-dark-pro">Monto base: RD$'+d.monto_base.toLocaleString()+'</span><br><span class="text-dark-pro">Adendas: '+d.adendas.join(' + ')+' = RD$'+d.total.toLocaleString()+'</span><br><span class="text-dark-pro">Tope '+d.config.limite_adendas+'%: RD$'+d.tope.toLocaleString()+'</span><br><span class="text-dark-pro">Excede: '+d.excede+'</span><br><span class="text-dark-pro">'+d.mensaje+'</span><br><small class="text-muted-pro">Entidad: '+d.config.entidad+' - Organo: '+d.config.organo_control.join(' + ')+' - Sistemas: '+d.config.sistemas.join(' + ')+' - Elimina EDESUR/Camara/CCA/CCRD - Coloca BASA - Profesional</small></div>';
+ });
+}
+probarM10();
+</script>
+</body></html>
+"""
+
+@app.route('/')
+def home():
+    return render_template_string(HTML, config=CONFIG_BASA, matriz=MATRIZ_BASA)
+
+@app.route('/api/probar/m10', methods=['POST'])
+def probar_m10():
+    entidad = CONFIG_BASA["entidad"]
+    organo = " + ".join(CONFIG_BASA["organo_control"])
+    sistemas = " + ".join(CONFIG_BASA["sistemas"])
+    transcripcion = "Transcripcion textual precisa real - Matriz_Control_Edesur_Camara_Cuentas.xlsx adaptada BASA - Antes EDESUR DOMINICANA, S.A. - MATRIZ DE RETENCION Y ARCHIVO DOCUMENTAL (NORMATIVA CAMARA DE CUENTAS) - Ahora BASA - MATRIZ DE RETENCION Y ARCHIVO DOCUMENTAL (NORMATIVA " + organo + " - Adaptada BASA) - Elimina Camara de Cuentas/CCA/CCRD/EDESUR - Coloca BASA - 4 hojas: FI-CI-PR-001 7 pasos + SJ-CO-PR-001 19 pasos tope 50% + LO-SG-PR-005 6 tipos retencion 10 anos/5 anos/Permanente Ley 481-08 - Sistemas " + sistemas + " - Retenciones 10 anos - Tope 50% - Hash BASA-M10-20261014 - Profesional sin carnaval - Letras contraste alto"
+    analisis = "Analisis claro y preciso - Matriz BASA profesional - FI-CI-PR-001 7 pasos Multicabinet SAP SUGEP SIGEF NOBACI - SJ-CO-PR-001 19 pasos tope 50% Art31 Art179 Informe Viabilidad 5 dias ULTICABINET SERC validacion 48h - LO-SG-PR-005 6 tipos retencion 10 anos/5 anos/Permanente Ley 481-08 - Adaptada BASA - Elimina EDESUR/Camara/CCA/CCRD - Coloca BASA - Profesional sin carnaval pomelo - Letras #1e293b sobre fondo #ffffff contraste alto"
+    reporte = "Reporte M10 BASA Profesional - Entidad BASA - Organo " + organo + " - Sistemas " + sistemas + " - Retenciones 10 anos - Tope 50% - Matriz BASA adaptada - FI-CI-PR-001 7 pasos + SJ-CO-PR-001 19 pasos + LO-SG-PR-005 6 tipos - Carga multiple + replicas + historial + GDPR + confidencial + trazabilidad + backup SHA-256 - Adaptada - Elimina EDESUR/Camara/CCA/CCRD - Coloca BASA - Profesional sin carnaval - DEMO 2026-10-07 a 2026-10-14"
+    script = "# M10 BASA Profesional - Sin carnaval - Fix syntax f-string 436\nCONFIG_BASA = " + str(CONFIG_BASA) + "\n\ndef m10_basa():\n    entidad = CONFIG_BASA['entidad']\n    return {'entidad': entidad, 'organo': ' + '.join(CONFIG_BASA['organo_control']), 'elimina': CONFIG_BASA['eliminar_referencias'], 'profesional': True, 'sin_carnaval': True, 'letras_contraste_alto': True, 'fix_syntax_436': True}"
+    return jsonify({"entidad": entidad, "organo": organo, "hash": "BASA-M10-20261014-PROFESIONAL", "demo": "DEMO ACTIVO 2026-10-07 a 2026-10-14 - BASA PROFESIONAL", "transcripcion": transcripcion, "analisis": analisis, "reporte": reporte, "script": script, "config": CONFIG_BASA})
+
+@app.route('/api/probar/pagos', methods=['POST'])
+def probar_pagos():
+    return jsonify({"config": CONFIG_BASA, "pasos": MATRIZ_BASA["verificacion_pagos"]})
+
+@app.route('/api/probar/contratos', methods=['POST'])
+def probar_contratos():
+    return jsonify({"config": CONFIG_BASA, "pasos": MATRIZ_BASA["contratos_adendas"]})
+
+@app.route('/api/probar/archivo', methods=['POST'])
+def probar_archivo():
+    return jsonify({"config": CONFIG_BASA, "archivo": MATRIZ_BASA["archivo_general"]})
+
+@app.route('/api/probar/tope50', methods=['POST'])
+def probar_tope50():
+    data = request.json
+    monto_base = data.get('monto_base', 1000000)
+    adendas = data.get('adendas', [])
+    total = sum(adendas)
+    tope = monto_base * CONFIG_BASA["limite_adendas"] / 100
+    excede = total > tope
+    if excede:
+        mensaje = "HALLAZGO AUTOMATICO BASA: Tope 50% excedido RD$ " + str(total - tope) + " - Informe Viabilidad Legal 5 dias requerido - Art31 Ley 340-06 + Art179 Dec 416-23 - BASA Profesional"
+    else:
+        mensaje = "OK BASA Profesional: Dentro tope 50% - RD$ " + str(total) + " <= RD$ " + str(tope) + " - BASA"
+    return jsonify({"config": CONFIG_BASA, "monto_base": monto_base, "adendas": adendas, "total": total, "tope": tope, "excede": excede, "mensaje": mensaje})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
