@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+M11: Transcripción Textual y Hash SHA-256
+"""
+import sys, json, hashlib
+
+def transcribir_literal(texto):
+    h = hashlib.sha256(texto.encode('utf-8')).hexdigest()
+    return {
+        "modulo": "M11",
+        "caracteres": len(texto),
+        "hash_sha256": h
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(transcribir_literal("Texto de prueba contractual"), indent=2, ensure_ascii=False))
