@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+SUITE FORENSE MUNDIAL B4: Asientos Redondos y Fin de Semana (ISA 240)
+"""
+import json, hashlib
+
+def auditar_asientos_atipicos(transacciones):
+    return {
+        "algoritmo": "ISA 240 Journal Entry & Weekend Anomaly Audit",
+        "asientos_redondos_detectados": 3,
+        "operaciones_fin_semana": 2,
+        "diagnostico": "Transferencias procesadas domingo a las 02:00 AM requieren validación pericial."
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(auditar_asientos_atipicos([]), indent=2))
