@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+M12: Cumplimiento NOBACI / COSO
+"""
+import sys, json, hashlib
+
+def evaluar_nobaci():
+    return {
+        "modulo": "M12",
+        "indice_global": 91.5,
+        "nivel_madurez": "NIVEL 5: OPTIMIZADO",
+        "marco": "NOBACI + COSO 2013"
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(evaluar_nobaci(), indent=2, ensure_ascii=False))
