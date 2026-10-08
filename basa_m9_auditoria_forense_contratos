@@ -1,0 +1,18 @@
+# -*- coding: utf-8 -*-
+"""
+M9: Auditoría Forense de Contratos
+"""
+import sys, json, hashlib
+
+def auditar_sobrecostos(monto_base, monto_adendas):
+    desvio = monto_adendas - (monto_base * 0.5)
+    return {
+        "modulo": "M9",
+        "monto_base": monto_base,
+        "monto_adendas": monto_adendas,
+        "desvio": desvio,
+        "excede": desvio > 0
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(auditar_sobrecostos(6000000, 3800000), indent=2, ensure_ascii=False))
