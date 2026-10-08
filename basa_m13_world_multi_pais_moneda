@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+M13: WORLD Multi-País, Idioma y Moneda
+"""
+import sys, json
+
+def adaptar_pais(codigo_pais):
+    return {
+        "modulo": "M13",
+        "pais": codigo_pais,
+        "moneda": "DOP" if codigo_pais == "DO" else "USD",
+        "tope_adendas": "50%"
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(adaptar_pais("DO"), indent=2, ensure_ascii=False))
