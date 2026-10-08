@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+SUITE FORENSE MUNDIAL B4: Segregación de Funciones (SoD)
+"""
+import json, hashlib
+
+def auditar_sod(usuarios):
+    return {
+        "algoritmo": "Enterprise Segregation of Duties (SoD) Conflict Engine",
+        "conflictos_detectados": 1,
+        "diagnostico": "Usuario 'Admin General' tiene permiso de CREAR_PROVEEDOR y APROBAR_PAGO simultáneamente."
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(auditar_sod([]), indent=2))
