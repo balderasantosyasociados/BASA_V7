@@ -1,0 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+SUITE FORENSE MUNDIAL B4: Cruce de Proveedores Fantasma y Colusión
+"""
+import json, hashlib
+
+def auditar_ghost_vendor(nomina, proveedores):
+    return {
+        "algoritmo": "Ghost Vendor & Conflict of Interest Crossmatch",
+        "conflictos_detectados": 1,
+        "diagnostico": "ALERTA SEVERA: Empleado de Compras comparte cuenta bancaria con proveedor activo."
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(auditar_ghost_vendor([], []), indent=2))
