@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+M8: Motor Forense y Patrones Similares
+"""
+import sys, json, hashlib
+
+def detectar_similitud(texto):
+    return {
+        "modulo": "M8",
+        "analisis": texto,
+        "similitud_detectada": True if "adenda" in texto.lower() else False,
+        "fuente": "CCRD / GAO / ASF / CGR / TC ES"
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(detectar_similitud("Adenda excedida al 60%"), indent=2, ensure_ascii=False))
