@@ -1,0 +1,44 @@
+# -*- coding: utf-8 -*-
+"""
+M1: Scraper y Cruce Portal Institucional vs ComprasDominicana + Matriz Modalidad/Monto
+Procedimiento: FI-CI-PR-001 + SJ-CO-PR-001
+Base Legal: Ley 340-06 Art. 16-17, Ley 200-04 Libre Acceso a la Información
+"""
+import sys, json, hashlib
+from datetime import datetime
+
+def auditar_cruce_portal(codigo_proceso, monto_estimado, modalidad_declarada, entidad="BASA DOMINICANA, S.A."):
+    fecha_analisis = datetime.now().isoformat()
+    if monto_estimado >= 6000000:
+        modalidad_correcta = "Licitación Pública Nacional"
+    elif monto_estimado >= 1500000:
+        modalidad_correcta = "Comparación de Precios"
+    elif monto_estimado >= 200000:
+        modalidad_correcta = "Compras Menores"
+    else:
+        modalidad_correcta = "Compras por Debajo del Umbral"
+        
+    coincide_modalidad = (modalidad_declarada.lower() in modalidad_correcta.lower())
+    fraccionamiento_detectado = not coincide_modalidad and monto_estimado > 1500000 and "menor" in modalidad_declarada.lower()
+    
+    payload = f"{codigo_proceso}|{monto_estimado}|{modalidad_declarada}|{fecha_analisis}"
+    hash_auditoria = hashlib.sha256(payload.encode('utf-8')).hexdigest()
+    
+    return {
+        "modulo": "M1",
+        "entidad": entidad,
+        "codigo_proceso": codigo_proceso,
+        "monto_estimado": monto_estimado,
+        "modalidad_declarada": modalidad_declarada,
+        "modalidad_requerida_ley": modalidad_correcta,
+        "conforme_normativa": coincide_modalidad,
+        "alerta_fraccionamiento": fraccionamiento_detectado,
+        "base_legal": "Ley 340-06 Art. 16 y 17 (Prohibición de Fraccionamiento)",
+        "hash_integridad": hash_auditoria,
+        "fecha_auditoria": fecha_analisis,
+        "estado": "CONFORME" if coincide_modalidad else "OBSERVADO_POR_MODALIDAD"
+    }
+
+if __name__ == '__main__':
+    res = auditar_cruce_portal("BASA-CCC-CP-2026-0012", 4800000.0, "Comparación de Precios")
+    print(json.dumps(res, indent=2, ensure_ascii=False))
