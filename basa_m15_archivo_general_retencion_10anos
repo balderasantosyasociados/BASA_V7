@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+M15: Archivo General y Retención 10 Años
+"""
+import sys, json
+
+def consultar_retencion(tipo):
+    return {
+        "modulo": "M15",
+        "tipo": tipo,
+        "retencion_minima": "10 Años",
+        "base_legal": "Ley 481-08 Archivo General"
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(consultar_retencion("Expedientes de Pago"), indent=2, ensure_ascii=False))
