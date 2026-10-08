@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+"""
+SUITE FORENSE MUNDIAL B4: Algoritmo de Ley de Benford (1er Dígito)
+Estándar Internacional: ISA 240 / SAS 99 / ACFE Forensic Methodology
+"""
+import math, json, hashlib
+from datetime import datetime
+
+def calcular_probabilidades_teoricas_benford():
+    return {d: math.log10(1.0 + 1.0 / d) for d in range(1, 10)}
+
+def analizar_ley_benford(importes):
+    prob_teoricas = calcular_probabilidades_teoricas_benford()
+    conteo_digitos = {d: 0 for d in range(1, 10)}
+    total_validos = 0
+    for val in importes:
+        try:
+            num = abs(float(val))
+            if num <= 0: continue
+            d = int(str(f"{num:.10f}").replace(".", "").lstrip("0")[0])
+            if 1 <= d <= 9:
+                conteo_digitos[d] += 1
+                total_validos += 1
+        except: continue
+        
+    chi2 = sum(((conteo_digitos[d] - (total_validos * prob_teoricas[d]))**2) / (total_validos * prob_teoricas[d]) for d in range(1, 10))
+    conforme = chi2 < 15.507
+    return {
+        "algoritmo": "Ley de Benford (ISA 240 / ACFE)",
+        "total_muestra": total_validos,
+        "chi_cuadrado": round(chi2, 4),
+        "cumple_distribucion_benford": conforme,
+        "diagnostico": "DISTRIBUCION NATURAL" if conforme else "DISTRIBUCION ANOMALA / SOSPECHA DE FRAUDE"
+    }
+
+if __name__ == '__main__':
+    print(json.dumps(analizar_ley_benford([1200, 1500, 1800, 2400, 3100, 4800, 4990, 7800, 8900, 1100, 1300, 1400, 1900, 2100, 2200, 3500, 4100, 5200, 6100, 7200, 8100, 9200]), indent=2))
