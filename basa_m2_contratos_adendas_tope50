@@ -1,0 +1,35 @@
+# -*- coding: utf-8 -*-
+"""
+M2: Validador de Contratos y Adendas al Tope 50%
+Procedimiento: SJ-CO-PR-001 (Paso 2)
+Base Legal: Ley 340-06 Art. 31 + Decreto 416-23 Art. 179
+"""
+import sys, json, hashlib
+from datetime import datetime
+
+def validar_tope_50_adendas(codigo_contrato, monto_base, lista_adendas, dias_informe_legal=4, entidad="BASA DOMINICANA, S.A."):
+    fecha = datetime.now().isoformat()
+    total_adendas = sum(lista_adendas)
+    tope_50 = monto_base * 0.50
+    porcentaje = round((total_adendas / monto_base * 100), 2) if monto_base > 0 else 0
+    excede = total_adendas > tope_50
+    
+    hash_evidencia = hashlib.sha256(f"{codigo_contrato}|{monto_base}|{total_adendas}|{fecha}".encode('utf-8')).hexdigest()
+    
+    return {
+        "modulo": "M2",
+        "entidad": entidad,
+        "codigo_contrato": codigo_contrato,
+        "monto_base": monto_base,
+        "total_adendas": total_adendas,
+        "porcentaje_adendas": porcentaje,
+        "tope_maximo_50": tope_50,
+        "excede_tope_50": excede,
+        "dias_informe_legal": dias_informe_legal,
+        "informe_en_plazo": dias_informe_legal <= 5,
+        "hash_auditoria": hash_evidencia
+    }
+
+if __name__ == '__main__':
+    res = validar_tope_50_adendas("CTR-2025-044", 6000000.0, [2000000.0, 1800000.0], dias_informe_legal=4)
+    print(json.dumps(res, indent=2, ensure_ascii=False))
