@@ -1,0 +1,27 @@
+# instalador.py - Instala todas las células automáticamente
+import os, sys, json, subprocess, time
+
+CELULAS_DIR = "celulas"
+print("🧬 BASA CELULAR - Instalador Automático")
+
+# 1. Crear carpeta células
+os.makedirs(CELULAS_DIR, exist_ok=True)
+
+# 2. Detectar células
+celulas = [d for d in os.listdir(CELULAS_DIR) if os.path.isdir(os.path.join(CELULAS_DIR,d))]
+
+# 3. Auto-instalar cada una
+for cel in celulas:
+    manifest_path = os.path.join(CELULAS_DIR, cel, "manifest.json")
+    if os.path.exists(manifest_path):
+        manifest = json.load(open(manifest_path))
+        print(f"Instalando célula {manifest['codigo']} - {manifest['nombre']}...")
+        # Instalar dependencias
+        for dep in manifest.get('dependencias',[]):
+            subprocess.run([sys.executable,"-m","pip","install",dep], capture_output=True)
+        # Inicializar DB
+        celula_py = os.path.join(CELULAS_DIR, cel, "celula.py")
+        print(f" ✓ {manifest['codigo']} lista en puerto {manifest['puerto']} - RD$ {manifest['precio_mensual']}/mes")
+
+print(f"\n✓ {len(celulas)} células instaladas")
+print("Ejecuta: python gateway_celular.py para acumularlas todas")
