@@ -1,0 +1,13 @@
+BASA_CELULAR/
+├── instalador.py ← INSTALA TODO AUTOMÁTICO
+├── gateway_celular.py ← DETECTA CÉLULAS AUTOMÁTICAMENTE (5000)
+└── celulas/
+    ├── M3_nomina/
+    │ ├── manifest.json ← ADN
+    │ ├── celula.py ← VIVE SOLA
+    │ └── nomina.db ← SE CREA SOLA
+    ├── M1_compras/
+    │ ├── manifest.json
+    │ └── celula.py
+    └── M5_prestamos/
+        └──...
