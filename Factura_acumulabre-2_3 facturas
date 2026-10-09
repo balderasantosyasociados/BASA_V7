@@ -1,0 +1,4 @@
+python celulas/M3_nomina/celula.py & # 5001
+python celulas/M1_compras/celula.py & # 5002
+python gateway_celular.py # 5000 detecta 2 células auto
+# → Facturación RD$15k+25k = RD$40k
