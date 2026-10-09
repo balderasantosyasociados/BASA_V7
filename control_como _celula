@@ -1,0 +1,6 @@
+CÉLULA M3 = {
+  adn: manifest.json (qué hace, NOBACI, NICSP, precio)
+  membrana: Flask API /health + /api/detectar
+  nucleo: su propia DB + scripts forenses
+  mitocondria: auto-instalador que no necesita nada externo
+}
