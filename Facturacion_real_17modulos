@@ -1,0 +1,4 @@
+python instalador.py # Instala 17 células auto
+python gateway_celular.py # Detecta 17 y forma organismo
+# → http://localhost:5000/api/orquestar/tejidocompleto
+# → Facturación RD$185k FULL
