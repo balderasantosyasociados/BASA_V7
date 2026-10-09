@@ -1,0 +1,4 @@
+# Le vendes solo M3
+./instalar.bat
+python basa_celular_full_17modulos.py --celula M3
+# Le facturas RD$15k/mes, corre en http://localhost:5003
