@@ -1,0 +1,3 @@
+# No reinstalas, solo agregas célula
+python basa_celular_full_17modulos.py --celula M1 &
+# Ahora gateway acumula M3+M1 = RD$30k/mes
