@@ -1,0 +1,7 @@
+{
+  "cliente": "Ayuntamiento SDN",
+  "tipo": "INDEPENDIENTE",
+  "modulos_activos": ["M3","M15"],
+  "precio_mensual": 15000,
+  "vencimiento": "2026-12-31"
+}
