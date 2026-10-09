@@ -1,0 +1,16 @@
+{
+  "codigo": "M3",
+  "nombre": "Nómina Fantasma",
+  "version": "1.0",
+  "puerto": 5001,
+  "nobaci": "AMB-3-002.15 Ambiente Control",
+  "nicsp": "NICSP 39 Beneficios Empleados",
+  "niif": "N/A",
+  "script_big4": "DUPLICATES ON cedula + cuenta_banco BHD",
+  "riesgo": ["Financiero","Administrativo"],
+  "precio_mensual": 15000,
+  "dependencias": ["pandas","flask"],
+  "auto_instalable": true,
+  "acumulable": true,
+  "endpoints": ["/health","/api/detectar","/api/empleados"]
+}
