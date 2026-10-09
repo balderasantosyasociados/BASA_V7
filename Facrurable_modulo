@@ -1,0 +1,4 @@
+cd celulas/M3_nomina/
+python celula.py
+# → http://localhost:5001/api/detectar
+# Cliente paga RD$15k solo por M3
