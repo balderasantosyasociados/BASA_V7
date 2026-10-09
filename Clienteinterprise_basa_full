@@ -1,0 +1,3 @@
+docker-compose up -d
+# 17 contenedores, cada uno independiente, si se cae M5 los demás siguen
+# Facturas RD$185k/mes FULL
