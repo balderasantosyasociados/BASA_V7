@@ -1,0 +1,50 @@
+# celulas/M3_nomina/celula.py - NO NECESITA NADA EXTERNO
+import os, sys, json, sqlite3, hashlib
+try:
+    from flask import Flask, jsonify
+    import pandas as pd
+except:
+    # AUTO-INSTALACIÓN si faltan librerías
+    os.system(f"{sys.executable} -m pip install flask pandas")
+    from flask import Flask, jsonify
+    import pandas as pd
+
+MANIFEST = json.load(open(os.path.join(os.path.dirname(__file__), 'manifest.json')))
+DB = os.path.join(os.path.dirname(__file__), f"{MANIFEST['codigo'].lower()}.db")
+app = Flask(__name__)
+
+def auto_init():
+    """Se instala sola la primera vez"""
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS empleados (id INTEGER PRIMARY KEY, nombre TEXT, cedula TEXT, sueldo REAL, cuenta TEXT, depto TEXT)")
+    if cur.execute("SELECT COUNT(*) FROM empleados").fetchone()[0]==0:
+        cur.executemany("INSERT INTO empleados VALUES (NULL,?,?,?,?,?)",[
+            ("Manuel Alcántara","001-0982341-2",185000,"BHD-10029384","Operaciones"),
+            ("Rosaura Peña","001-4433221-9",95000,"BHD-00998811","Compras"),
+            ("Duplicado","001-4433221-9",35000,"BHD-00998811","Logística"),
+        ])
+        conn.commit()
+        print(f"[{MANIFEST['codigo']}] DB auto-creada con datos demo")
+    conn.close()
+    print(f"[{MANIFEST['codigo']}] Célula viva en puerto {MANIFEST['puerto']} - {MANIFEST['nombre']}")
+
+@app.route('/health')
+def health():
+    return jsonify({"celula":MANIFEST["codigo"],"status":"VIVA","puerto":MANIFEST["puerto"],"acumulable":True,"precio":MANIFEST["precio_mensual"]})
+
+@app.route('/api/detectar')
+def detectar():
+    conn = sqlite3.connect(DB)
+    df = pd.read_sql_query("SELECT * FROM empleados", conn)
+    conn.close()
+    dup = df[df.duplicated('cedula', keep=False)]
+    hallazgos = [{"codigo":f"H-{ced}","descripcion":f"Cédula {ced} duplicada"} for ced in dup['cedula'].unique()]
+    return jsonify({"celula":MANIFEST["codigo"],"manifest":MANIFEST,"hallazgos":hallazgos,"vive_sola":True,"puede_acumularse":True})
+
+auto_init()
+if __name__ == '__main__':
+    print(f"=== CELULA {MANIFEST['codigo']} - MODO SOLO ===")
+    print(f"Ejecuta solo: http://localhost:{MANIFEST['puerto']}/api/detectar")
+    print(f"Puede acumularse con otras células en gateway 5000")
+    app.run(host='0.0.0.0', port=MANIFEST['puerto'])
