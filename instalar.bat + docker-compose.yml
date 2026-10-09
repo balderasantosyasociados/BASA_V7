@@ -1,0 +1,8 @@
+# Dockerfile - Celula BASA
+FROM python:3.11-slim
+WORKDIR /app
+COPY basa_celular_full_17modulos.py .
+RUN pip install --no-cache-dir flask pandas requests
+ENV CELULA=M3
+EXPOSE 5003
+CMD python basa_celular_full_17modulos.py --celula ${CELULA}
