@@ -1,0 +1,7 @@
+LICENCIA = {"tipo":"INDEPENDIENTE", "modulos_activos":["M3","M15"]} # Solo nómina
+
+@app.route('/api/detectar')
+def detectar():
+    if "M3" not in LICENCIA["modulos_activos"]:
+        return jsonify({"error":"Módulo no licenciado","upgrade_url":"/facturar/M3"})
+    # Solo corre M3
