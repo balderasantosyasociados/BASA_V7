@@ -1,0 +1,47 @@
+# Política de Privacidad de Audit Intelligence
+
+**Última actualización:** 26 de octubre de 2026
+
+En **Audit Intelligence**, la privacidad y la seguridad de la información financiera, contable y personal de nuestros usuarios son una prioridad fundamental. Esta Política de Privacidad describe cómo recopilamos, utilizamos, almacenamos y protegemos la información a través de nuestra plataforma.
+
+---
+
+## 1. Información que Recopilamos
+Para brindar nuestros servicios de auditoría forense, validación de datos y cumplimiento fiscal, podemos recopilar la siguiente información:
+* **Datos de identificación:** Nombre completo, dirección de correo electrónico, RNC/cédula, datos de contacto y credenciales de usuario.
+* **Información financiera y contable:** Archivos de facturación, reportes de retenciones, nómina y otros documentos requeridos para procesos de auditoría y análisis contable.
+* **Datos de uso técnico:** Dirección IP, registros de acceso y eventos dentro de la aplicación web para fines de seguridad y rendimiento.
+
+---
+
+## 2. Uso de la Información
+La información recopilada se utiliza estrictamente para:
+* Ejecutar procesos de auditoría forense, análisis contable y automatización fiscal en la plataforma.
+* Verificar y validar la integridad de los datos financieros procesados.
+* Proporcionar soporte técnico y mantenimiento de la plataforma.
+* Cumplir con requerimientos legales y normativos aplicables.
+
+---
+
+## 3. Integración con Terceros
+* **Stripe & Financial Connections:** Utilizamos Stripe para el procesamiento seguro de pagos y la conexión de cuentas financieras. No almacenamos credenciales bancarias ni datos confidenciales de pago en nuestros servidores; dichos datos son procesados directamente por Stripe de acuerdo con sus propios estándares de seguridad y privacidad.
+* **No comercialización:** No vendemos, alquilamos ni compartimos la información personal o financiera de los usuarios con terceros para fines publicitarios.
+
+---
+
+## 4. Seguridad de los Datos
+Implementamos estándares de seguridad de grado bancario y protocolos de cifrado (SSL/TLS) para proteger la transmisión y el almacenamiento de los datos. El acceso a la información está restringido únicamente al usuario y al personal autorizado necesario para operar el servicio.
+
+---
+
+## 5. Derechos del Usuario
+Los usuarios tienen derecho a:
+* Solicitar el acceso, actualización o rectificación de sus datos personales.
+* Requerir la eliminación o supresión de la información almacenada en la plataforma, sujeta a los plazos legales de conservación contable.
+* Revocar los permisos de acceso a integraciones de terceros en cualquier momento.
+
+---
+
+## 6. Contacto
+Si tiene preguntas o inquietudes sobre esta Política de Privacidad, puede contactarnos a través de los canales oficiales de soporte de **Audit Intelligence**.
+
