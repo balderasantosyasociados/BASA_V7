@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+"""
+Suite de Pruebas Automatizadas para BASA V9.1
+Verifica: Benford, Fraccionamiento Ley 340, Empresas Espejo, DGII y Endpoints HTTP
+"""
+import unittest
+import json
+from app import app, ForensicAuditEngine, calcular_facturacion
+
+class TestBasaForensic(unittest.TestCase):
+
+    def setUp(self):
+        self.app = app.test_client()
+        self.app.testing = True
+
+    # 1. Prueba del Motor de Benford
+    def test_benford_muestra_valida(self):
+        # Transacciones simuladas con primer dígito '1' anómalo
+        datos = [{"monto": 1000 + (i * 10)} for i in range(50)]
+        resultado = ForensicAuditEngine.ejecutar_benford(datos)
+        self.assertTrue(resultado["valido"])
+        self.assertIn("chi_cuadrado", resultado)
+        self.assertTrue(resultado["alteracion_sintetica_detectada"])
+
+    def test_benford_muestra_insuficiente(self):
+        datos = [{"monto": 500}, {"monto": 1200}]
+        resultado = ForensicAuditEngine.ejecutar_benford(datos)
+        self.assertFalse(resultado["valido"])
+        self.assertEqual(resultado["score_anomalia"], 0)
+
+    # 2. Prueba del Fraccionamiento Ley 340-06
+    def test_detector_fraccionamiento(self):
+        # 3 facturas menores a 180,000 en menos de 15 días que suman más del límite
+        transacciones = [
+            {"id": "F1", "fecha": "2026-03-01", "monto": 100000.0, "rnc_proveedor": "101-00001-1"},
+            {"id": "F2", "fecha": "2026-03-05", "monto": 90000.0, "rnc_proveedor": "101-00001-1"}
+        ]
+        hallazgos = ForensicAuditEngine.detector_fraccionamiento(transacciones, umbral_limite=180000.0, ventana_dias=15)
+        self.assertEqual(len(hallazgos), 1)
+        self.assertEqual(hallazgos[0]["total_fraccionado"], 190000.0)
+
+    # 3. Prueba de Red de Empresas Espejo (Colusión)
+    def test_empresas_espejo(self):
+        proveedores = [
+            {"rnc": "101-1", "direccion": "Av Winston Churchill 10", "cuenta_bancaria": "1111"},
+            {"rnc": "101-2", "direccion": "Av Winston Churchill 10", "cuenta_bancaria": "1111"}
+        ]
+        anomalias = ForensicAuditEngine.detector_red_empresas_espejo(proveedores)
+        self.assertTrue(len(anomalias) >= 1)
+
+    # 4. Prueba del Motor de Facturación y Prorrateo
+    def test_facturacion_prorrateo(self):
+        calc = calcular_facturacion(["M1_BENFORD_SPECTRUM"])
+        self.assertIn("B4_BASE", calc["modulos"])  # Debe forzar B4_BASE
+        self.assertTrue(calc["primer_pago_prorrateado"] > 0)
+
+    # 5. Prueba de Endpoints HTTP
+    def test_endpoint_healthz(self):
+        res = self.app.get('/healthz')
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertEqual(data["status"], "OPERATIONAL")
+
+    def test_api_inspeccion_forense(self):
+        res = self.app.post('/api/v8/forensic-inspect', 
+                            data=json.dumps({}),
+                            content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertIn("fraud_risk_score", data)
+        self.assertIn("evidencia_criptografica_sha256", data)
+
+if __name__ == '__main__':
+    unittest.main()
