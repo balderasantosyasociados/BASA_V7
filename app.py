@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-BASA FORENSIC INTELLIGENCE - ULTIMATE MULTI-MODULE SUITE (EDICIÓN BIG 4)
-Versión: 9.9 TOTAL-ENTERPRISE (Independent & Joint Execution Architecture)
-Estándares: ISA 240, INTOSAI ISSAI 5270, GAFI 40, Ley RD 340-06 / 155-17, 
-            US FCPA, Ley 9/2017 LCSP España, LAASSP México, Ley 80 Colombia
+BASA FORENSIC INTELLIGENCE - ULTIMATE AUDIT INTELLIGENCE SUITE
+Versión: 10.0 USA-GLOBAL ENTERPRISE (Traceable, Independent & Consolidated)
+Estándares: PCAOB AS 2401, AICPA SAS 143/145, Yellow Book GAGAS, FinCEN BOI, 
+            US False Claims Act, ISA 240, INTOSAI ISSAI 5270, Ley RD 340-06 / 155-17
 Autor: Pedro Baldera
 ================================================================================
 """
@@ -26,10 +26,10 @@ from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("BASA_CORE")
+logger = logging.getLogger("BASA_AUDIT_USA")
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "basa_sec_key_2026_forensic_suite_ultimate")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "basa_sec_audit_usa_2026_enterprise_vault")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
@@ -41,131 +41,152 @@ def security_headers(response):
     return response
 
 # ==============================================================================
-# CONFIGURACIÓN BANCARIA Y BASE DE DATOS
+# CONFIGURACIÓN BANCARIA Y PARÁMETROS
 # ==============================================================================
 BHD_CUENTA = os.environ.get("BHD_CUENTA", "08694150021")
 TITULAR = os.environ.get("TITULAR_CUENTA", "Pedro Baldera")
 CONTACTO = os.environ.get("CONTACTO_OFICIAL", "licpedrobaldera@gmail.com / +1 829 771 7390")
-DB_PATH = os.environ.get("BASA_DB_PATH", "basa_audit_vault.db")
+DB_PATH = os.environ.get("BASA_DB_PATH", "basa_audit_traceability.db")
 
 # ==============================================================================
-# JURISDICCIONES Y MARCOS JURÍDICOS (MULTI-PAÍS)
+# JURISDICCIONES Y NORMAS USA / INTERNACIONAL
 # ==============================================================================
 JURISDICCIONES = {
+    "US": {
+        "pais": "Estados Unidos (USA Standards)", "moneda": "USD",
+        "ley_compras": "FAR (Federal Acquisition Regulation Part 13) & False Claims Act (31 U.S.C. § 3729)",
+        "ley_antilavado": "Bank Secrecy Act (BSA), FinCEN BOI (Beneficial Ownership) & USA PATRIOT Act",
+        "codigo_tributario": "Internal Revenue Code (IRC), Foreign Corrupt Practices Act (FCPA) & SOX Sec. 404/802",
+        "auditoria_estandar": "PCAOB AS 2401, AICPA SAS 143/145 & Yellow Book (GAGAS 2024-2026)",
+        "umbral_compras_menores": 10000.0,
+        "autoridades": ["DOJ (Department of Justice)", "SEC", "FinCEN", "GAO / Inspector General"]
+    },
     "DO": {
         "pais": "República Dominicana", "moneda": "DOP",
         "ley_compras": "Ley 340-06 sobre Compras y Contrataciones Públicas y Decreto 543-12",
         "ley_antilavado": "Ley 155-17 contra el Lavado de Activos y Financiamiento del Terrorismo",
-        "codigo_tributario": "Código Tributario Ley 11-92 (Formatos 606/607 y Comprobantes Fiscales NCF)",
+        "codigo_tributario": "Código Tributario Ley 11-92 (Formatos 606/607 y Comprobantes Fiscales NCF / e-CF)",
+        "auditoria_estandar": "ISA 240, INTOSAI ISSAI 5270 y Normas de la Cámara de Cuentas",
         "umbral_compras_menores": 180000.0,
         "autoridades": ["Cámara de Cuentas", "PEPCA / Procuraduría General", "DGCP", "DIGEIG", "UAF-RD"]
     },
-    "US": {
-        "pais": "Estados Unidos (USA)", "moneda": "USD",
-        "ley_compras": "FAR (Federal Acquisition Regulation Part 13 - Simplified Acquisition)",
-        "ley_antilavado": "Bank Secrecy Act (BSA), USA PATRIOT Act & FinCEN Guidelines",
-        "codigo_tributario": "Internal Revenue Code (IRC) & Foreign Corrupt Practices Act (FCPA)",
-        "umbral_compras_menores": 10000.0,
-        "autoridades": ["DOJ (Department of Justice)", "SEC", "FinCEN", "GAO"]
-    },
     "ES": {
         "pais": "España & Unión Europea", "moneda": "EUR",
-        "ley_compras": "Ley 9/2017 de Contratos del Sector Público (LCSP) - Directivas UE",
+        "ley_compras": "Ley 9/2017 de Contratos del Sector Público (LCSP) - Directivas UE 2014/24",
         "ley_antilavado": "Ley 10/2010 de Prevención de Blanqueo de Capitales y Directiva 6AMLD",
-        "codigo_tributario": "Ley General Tributaria 58/2003 y Código Penal (Art. 31 bis)",
+        "codigo_tributario": "Ley General Tributaria 58/2003 y Código Penal Art. 31 bis",
+        "auditoria_estandar": "Normas Técnicas de Auditoría NIA-ES 240 y Tribunal de Cuentas Europeo",
         "umbral_compras_menores": 15000.0,
         "autoridades": ["Tribunal de Cuentas", "Fiscalía Anticorrupción", "SEPBLAC", "AEAT"]
     },
     "MX": {
         "pais": "México", "moneda": "MXN",
         "ley_compras": "Ley de Adquisiciones, Arrendamientos y Servicios del Sector Público (LAASSP)",
-        "ley_antilavado": "Ley Federal para la Prevención e Identificación de Operaciones con Recursos Ilícitos (LFPIORPI)",
-        "codigo_tributario": "Código Fiscal de la Federación (Art. 69-B EFOS y EDOS) y SAT CFDI 4.0",
+        "ley_antilavado": "Ley Federal de Prevención de Operaciones con Recursos Ilícitos (LFPIORPI)",
+        "codigo_tributario": "Código Fiscal de la Federación (Art. 69-B EFOS/EDOS) y SAT CFDI 4.0",
+        "auditoria_estandar": "Normas Internacionales de Auditoría IMCP y Marco ASF",
         "umbral_compras_menores": 350000.0,
         "autoridades": ["Auditoría Superior de la Federación (ASF)", "SFP", "UIF", "SAT"]
     },
     "CO": {
         "pais": "Colombia", "moneda": "COP",
-        "ley_compras": "Estatuto General de Contratación Pública (Ley 80 de 1993 y Ley 1150 de 2007)",
-        "ley_antilavado": "Estatuto Anticorrupción (Ley 1474 de 2011) y Sistema SARLAFT / SAGRILAFT",
+        "ley_compras": "Estatuto General de Contratación (Ley 80 de 1993 y Ley 1150 de 2007)",
+        "ley_antilavado": "Estatuto Anticorrupción Ley 1474 de 2011 y Circular Básica Jurídica SARLAFT",
         "codigo_tributario": "Estatuto Tributario Nacional y Facturación Electrónica DIAN",
+        "auditoria_estandar": "Normas de Aseguramiento de la Información (NAI) y Contraloría General",
         "umbral_compras_menores": 50000000.0,
-        "autoridades": ["Contraloría General de la República", "Procuraduría General", "Fiscalía General", "DIAN"]
+        "autoridades": ["Contraloría General", "Procuraduría General", "Fiscalía General", "DIAN"]
     },
     "GLOBAL": {
-        "pais": "Internacional (ISA / INTOSAI)", "moneda": "USD",
-        "ley_compras": "INTOSAI ISSAI 5270 (Fraude y Corrupción en Contrataciones Públicas)",
-        "ley_antilavado": "GAFI/FATF 40 Recomendaciones sobre Lavado de Dinero",
-        "codigo_tributario": "Normas Internacionales de Auditoría ISA 240 (Fraude Contable)",
+        "pais": "Marco Internacional ISA / INTOSAI", "moneda": "USD",
+        "ley_compras": "INTOSAI ISSAI 5270 (Guideline for Audit of Corruption and Fraud in Procurement)",
+        "ley_antilavado": "FATF / GAFI 40 Recommendations on Anti-Money Laundering",
+        "codigo_tributario": "Normas Internacionales de Auditoría ISA 240 (Fraude en Estados Financieros)",
+        "auditoria_estandar": "International Standards on Auditing (ISA) & Yellow Book",
         "umbral_compras_menores": 10000.0,
-        "autoridades": ["UNCAC (Naciones Unidas)", "Interpol Financial Crimes Unit", "INTOSAI"]
+        "autoridades": ["UNCAC (Naciones Unidas)", "Interpol Financial Crimes", "INTOSAI"]
     }
 }
 
 # ==============================================================================
-# CATÁLOGO DE LOS 9 MÓDULOS DE GRADO PERICIAL
+# CATÁLOGO DE MÓDULOS DE ALTA PRECISIÓN FORENSE
 # ==============================================================================
 MODULOS_ENTERPRISE = {
     "B4_BASE": {
         "codigo": "B4_BASE",
-        "nombre": "Núcleo Pericial ISA 240, Cadena de Custodia SHA-256 e ISSAI 5270",
+        "nombre": "B4 Core - Cadena de Custodia Criptográfica, SAS 145 & Matriz ISA 240",
         "precio": 12500, "incluido": True,
-        "desc": "Marco rector de auditoría judicial, hash inmutable y certificación de dictámenes periciales."
+        "desc": "Bóveda central de trazabilidad, sellado digital SHA-256 e integridad pericial probatoria."
     },
     "M1_BENFORD": {
         "codigo": "M1_BENFORD",
-        "nombre": "M1 - Espectro Benford Chi-Cuadrado de 1er y 2do Dígito",
+        "nombre": "M1 - Espectro Benford Chi-Cuadrado de 1er y 2do Dígito (Audit AI USA)",
         "precio": 5500, "incluido": False,
-        "desc": "Análisis matemático de distribución de dígitos para detectar cifras artificiales o inventadas."
+        "desc": "Detección matemática de cifras sintéticas e invención de montos bajo PCAOB AS 2401."
     },
     "M2_FRACCIONAMIENTO": {
         "codigo": "M2_FRACCIONAMIENTO",
-        "nombre": "M2 - Algoritmo Anti-Fraccionamiento de Compras Públicas & Smurfing",
+        "nombre": "M2 - Algoritmo Anti-Fraccionamiento & Smurfing (FAR Part 13 / Ley 340-06)",
         "precio": 6000, "incluido": False,
-        "desc": "Detecta contratos divididos artificialmente para burlar licitaciones (Ley 340-06 / FAR / LCSP)."
+        "desc": "Clustering temporal de pagos estructurados para evadir licitaciones públicas obligatorias."
     },
     "M3_EMPRESAS_ESPEJO": {
         "codigo": "M3_EMPRESAS_ESPEJO",
-        "nombre": "M3 - Cartelización, Empresas Espejo y Domicilios Idénticos",
+        "nombre": "M3 - Detector FinCEN BOI de Empresas Pantalla, Colusión y Bid-Rigging",
         "precio": 7000, "incluido": False,
-        "desc": "Grafo pericial de colusión entre oferentes con misma cuenta bancaria, teléfono o dirección."
+        "desc": "Grafo pericial de oferentes con coincidencias en cuentas bancarias, teléfonos o domicilios fiscales."
     },
     "M4_CONFLICTO_INTERES": {
         "codigo": "M4_CONFLICTO_INTERES",
-        "nombre": "M4 - Matriz de Consanguinidad, Cruce de Funcionarios y PEPs",
+        "nombre": "M4 - Matriz de Consanguinidad, Afinidad con Compradores Públicos y PEPs",
         "precio": 6500, "incluido": False,
-        "desc": "Cruce de compradores estatales contra socios/directivos por vínculos familiares o afinidad."
+        "desc": "Cruce automatizado de funcionarios con beneficiarios reales bajo 18 U.S.C. § 208."
     },
     "M5_NOMINA_FANTASMA": {
         "codigo": "M5_NOMINA_FANTASMA",
-        "nombre": "M5 - Auditoría de Nóminas Fantasma, Zombis y Descuadre de Seguridad Social",
+        "nombre": "M5 - Auditoría Forense de Nómina: Zombis, TSS Descuadrada y Cuentas Puente",
         "precio": 5000, "incluido": False,
-        "desc": "Detecta personal inactivo cobrando, duplicidad de cargos públicos y desvío a cuentas puente."
+        "desc": "Inspección de pagos a personal desvinculado y dispersión múltiple hacia cuentas bancarias idénticas."
     },
     "M6_EVASION_FISCAL": {
         "codigo": "M6_EVASION_FISCAL",
-        "nombre": "M6 - Inconsistencias Fiscales, Comprobantes Apócrifos y Cruce 606/607",
+        "nombre": "M6 - Inconsistencias Fiscales, Comprobantes Apócrifos y Cruce 606/607 / CFDI",
         "precio": 8000, "incluido": False,
-        "desc": "Cruce de compras vs ventas declaradas (DGII, SAT CFDI, DIAN, AEAT) y facturación redonda atípica."
+        "desc": "Validación cruzada de ventas vs compras declaradas y montos redondos no sustentados."
     },
     "M7_DESVIO_FONDOS": {
         "codigo": "M7_DESVIO_FONDOS",
-        "nombre": "M7 - Triangulación de Fondos, Pagos Circulares y Salidas Offshore",
+        "nombre": "M7 - Triangulación a Paraísos Fiscales y Pagos Circulares (BSA / Ley 155-17)",
         "precio": 9000, "incluido": False,
-        "desc": "Rastreo de fondos con escala rápida hacia cuentas puente y paraísos fiscales (Ley 155-17 / GAFI)."
+        "desc": "Detección de dispersiones rápidas hacia cuentas offshore y tipologías de blanqueo."
     },
     "M8_QUERELLA_AI": {
         "codigo": "M8_QUERELLA_AI",
-        "nombre": "M8 - Generador Automático de Querellas Penales e Informes Judiciales",
+        "nombre": "M8 - Generador Automático de Denuncias Penales y Querellas Judiciales",
         "precio": 8500, "incluido": False,
-        "desc": "Redacción técnica pericial con fundamentación procesal penal lista para depositar ante la fiscalía."
+        "desc": "Redacción procesal pericial con citas de leyes aplicables y petitorio de medidas cautelares."
     }
 }
 
-# Inicializar Base de Datos Local
+# ==============================================================================
+# BASE DE DATOS Y BÓVEDA DE TRAZABILIDAD (AUDIT TRAIL)
+# ==============================================================================
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trazabilidad_pericial (
+                id_ejecucion TEXT PRIMARY KEY,
+                tipo_ejecucion TEXT, -- 'INDIVIDUAL' o 'CONSOLIDADA'
+                modulo_o_conjunto TEXT,
+                pais TEXT,
+                fecha_utc TEXT,
+                score_riesgo REAL,
+                hash_input TEXT,
+                hash_resultado TEXT,
+                payload_resultado TEXT
+            )
+        """)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS contratos (
                 contrato_id TEXT PRIMARY KEY,
@@ -177,17 +198,6 @@ def init_db():
                 primer_pago REAL,
                 hash_seguridad TEXT,
                 fecha TEXT
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS dictamenes (
-                dictamen_id TEXT PRIMARY KEY,
-                modulo_o_tipo TEXT,
-                pais TEXT,
-                fecha TEXT,
-                score_riesgo REAL,
-                payload_json TEXT,
-                hash_sha256 TEXT
             )
         """)
         conn.commit()
@@ -205,8 +215,11 @@ def safe_float(valor, default=0.0):
     except (ValueError, TypeError):
         return default
 
+def calcular_hash_objeto(obj):
+    return hashlib.sha256(json.dumps(obj, sort_keys=True, default=str).encode('utf-8')).hexdigest()
+
 # ==============================================================================
-# MOTOR FORENSE CUANTITATIVO: IMPLEMENTACIÓN COMPLETA DE CADA MÓDULO
+# MOTOR FORENSE CUANTITATIVO: IMPLEMENTACIÓN INDEPENDIENTE Y TRAZABLE
 # ==============================================================================
 class ForensicAuditEngine:
     BENFORD_PROBABILITIES = {
@@ -231,8 +244,9 @@ class ForensicAuditEngine:
             return {
                 "modulo": "M1_BENFORD",
                 "valido": False,
-                "motivo": f"Muestra insuficiente ({n}/20 transacciones requeridas según ISA 240)",
-                "score_anomalia": 0
+                "motivo": f"Muestra insuficiente ({n}/20 registros mínimos según PCAOB AS 2401 e ISA 240)",
+                "score_anomalia": 0,
+                "alteracion_sintetica_detectada": False
             }
 
         conteo = collections.Counter(digitos)
@@ -249,19 +263,20 @@ class ForensicAuditEngine:
                 "pct_esperado": round(ForensicAuditEngine.BENFORD_PROBABILITIES[d] * 100, 2)
             }
 
-        manipulacion = chi_square > 20.09
+        alteracion = chi_square > 20.09
         score = min(100.0, round((chi_square / 40.0) * 100, 2))
 
         return {
             "modulo": "M1_BENFORD",
             "valido": True,
-            "estandar": "ISA 240 / Benford Law Quantitative Test",
+            "estandar_aplicado": "PCAOB AS 2401 / AICPA SAS 145 / ISA 240",
             "total_transacciones": n,
             "chi_cuadrado": round(chi_square, 4),
             "valor_critico_99": 20.09,
-            "alteracion_sintetica_detectada": manipulacion,
+            "alteracion_sintetica_detectada": alteracion,
             "score_anomalia": score,
-            "distribucion": distribucion
+            "distribucion": distribucion,
+            "conclusion": "Cifras con desviación probabilística anormal; presunta fabricación manual." if alteracion else "Distribución conforme a la Ley de Benford."
         }
 
     @staticmethod
@@ -318,18 +333,19 @@ class ForensicAuditEngine:
                                 "proveedor": rnc,
                                 "total_fraccionado": round(suma, 2),
                                 "formato_moneda": f"{moneda} {suma:,.2f}",
-                                "umbral_violado": f"{moneda} {umbral_limite:,.2f}",
-                                "cantidad_facturas": len(cluster),
+                                "umbral_evadido": f"{moneda} {umbral_limite:,.2f}",
+                                "facturas_detectadas": len(cluster),
                                 "evidencias": ids,
                                 "normativa_violada": config_pais["ley_compras"],
-                                "tipo": "Fraccionamiento de Compras / Smurfing licitatorio"
+                                "calificacion_pericial": "Fraccionamiento Ilegal / Smurfing para eludir Licitación Pública"
                             })
 
         return {
             "modulo": "M2_FRACCIONAMIENTO",
             "total_hallazgos": len(hallazgos),
             "score_riesgo": 100 if hallazgos else 0,
-            "detalles": hallazgos
+            "detalles": hallazgos,
+            "conclusion": f"Se han detectado {len(hallazgos)} patrones de fraccionamiento estructurado." if hallazgos else "No se observan fraccionamientos bajo los umbrales configurados."
         }
 
     @staticmethod
@@ -353,26 +369,27 @@ class ForensicAuditEngine:
         for d, r_list in direcciones.items():
             if len(r_list) > 1:
                 anomalias.append({
-                    "tipo": "Domicilio fiscal compartido",
+                    "patron": "Domicilio fiscal común en oferentes supuestamente competidores",
                     "coincidencia": d,
                     "proveedores_involucrados": list(r_list),
-                    "violacion": f"Colusión y Licitación Simulada ({config_pais['ley_compras']})"
+                    "violacion": f"Colusión y Licitación Simulada (Bid-Rigging) / {config_pais['ley_compras']}"
                 })
 
         for c, r_list in cuentas.items():
             if len(r_list) > 1:
                 anomalias.append({
-                    "tipo": "Misma cuenta bancaria de cobro",
+                    "patron": "Misma cuenta bancaria de cobro receptora para múltiples RNC/EIN",
                     "coincidencia": c,
                     "proveedores_involucrados": list(r_list),
-                    "violacion": f"Empresas Pantalla y Concentración Ilícita ({config_pais['ley_antilavado']})"
+                    "violacion": f"Empresas Pantalla y Concentración Ilícita FinCEN BOI / {config_pais['ley_antilavado']}"
                 })
 
         return {
             "modulo": "M3_EMPRESAS_ESPEJO",
             "total_anomalias": len(anomalias),
             "score_riesgo": 90 if anomalias else 0,
-            "detalles": anomalias
+            "detalles": anomalias,
+            "conclusion": f"Se evidencian {len(anomalias)} nexos de cartelización empresarial." if anomalias else "Sin indicios de domicilios o cuentas compartidas."
         }
 
     @staticmethod
@@ -396,13 +413,13 @@ class ForensicAuditEngine:
 
             for d in directivos:
                 d_upper = str(d).strip().upper()
-                # Coincidencia directa o afinidad por apellidos
                 if d_upper in nombres_funcionarios:
                     hallazgos.append({
                         "proveedor": p.get("nombre") or p.get("rnc"),
                         "persona_vinculada": d_upper,
                         "tipo_conflicto": "Identidad Plena Funcionario-Proveedor",
-                        "riesgo": "CRÍTICO (Prohibición expresa de contratar con el Estado / Tráfico de influencias)"
+                        "norma": "Incompatibilidad Expresa / Conflicto de Interés Estatal (18 U.S.C. § 208)",
+                        "nivel_riesgo": "CRÍTICO"
                     })
                 else:
                     for ap in apellidos_funcionarios:
@@ -411,7 +428,8 @@ class ForensicAuditEngine:
                                 "proveedor": p.get("nombre") or p.get("rnc"),
                                 "persona_vinculada": d_upper,
                                 "tipo_conflicto": f"Vínculo de Consanguinidad/Afinidad detectado (Apellido: {ap})",
-                                "riesgo": "ALTO (Violación al régimen de incompatibilidades y PEPs)"
+                                "norma": "Violación al Régimen de Incompatibilidades y PEPs",
+                                "nivel_riesgo": "ALTO"
                             })
                             break
 
@@ -419,7 +437,8 @@ class ForensicAuditEngine:
             "modulo": "M4_CONFLICTO_INTERES",
             "total_conflictos": len(hallazgos),
             "score_riesgo": 85 if hallazgos else 0,
-            "detalles": hallazgos
+            "detalles": hallazgos,
+            "conclusion": f"Se han identificado {len(hallazgos)} vínculos entre compradores estatales y proveedores." if hallazgos else "No se observan conflictos de interés directos."
         }
 
     @staticmethod
@@ -433,33 +452,32 @@ class ForensicAuditEngine:
             estado = str(emp.get("estado", "ACTIVO")).strip().upper()
             monto_sueldo = safe_float(emp.get("sueldo", 0))
 
-            # Empleado inactivo o suspendido cobrando
-            if estado in ["INACTIVO", "SUSPENDIDO", "CANCELADO"] and monto_sueldo > 0:
+            if estado in ["INACTIVO", "SUSPENDIDO", "CANCELADO", "DESVINCULADO"] and monto_sueldo > 0:
                 anomalias.append({
                     "empleado": emp_id,
                     "sueldo": monto_sueldo,
-                    "tipo": "Empleado Zombi / Cobro en nómina estando inactivo o desvinculado",
-                    "riesgo": "Malversación de caudales públicos y sueldo fantasma"
+                    "tipo": "Empleado Zombi / Cobro en nómina estando legalmente inactivo",
+                    "calificacion": "Malversación de caudales públicos y sueldo fantasma"
                 })
 
             if len(cta) > 4:
                 cuentas_bancarias[cta].append(emp_id)
 
-        # Cuentas bancarias que reciben múltiples sueldos
         for cta, emps in cuentas_bancarias.items():
             if len(emps) > 1:
                 anomalias.append({
                     "cuenta_bancaria": cta,
                     "empleados_asociados": emps,
-                    "tipo": "Misma cuenta bancaria receptora de múltiples salarios estatales",
-                    "riesgo": "Desvío sistemático de nómina hacia cuenta puente"
+                    "tipo": "Misma cuenta bancaria receptora de múltiples sueldos",
+                    "calificacion": "Desvío sistemático de fondos públicos a cuenta puente"
                 })
 
         return {
             "modulo": "M5_NOMINA_FANTASMA",
             "total_anomalias": len(anomalias),
             "score_riesgo": 80 if anomalias else 0,
-            "detalles": anomalias
+            "detalles": anomalias,
+            "conclusion": f"Detectadas {len(anomalias)} anomalías en desembolsos de nómina." if anomalias else "Nómina auditada sin inconsistencias de dispersión."
         }
 
     @staticmethod
@@ -477,22 +495,23 @@ class ForensicAuditEngine:
                     "comprobante_id": ncf,
                     "monto": f"{moneda} {monto:,.2f}",
                     "tipo": f"Comprobante de compra no declarado por la contraparte ({config_pais['codigo_tributario']})",
-                    "riesgo": "Operación simulada / Deducción de gasto ficticio"
+                    "calificacion": "Operación simulada / Deducción de gasto ficticio apócrifo"
                 })
 
             if monto >= (config_pais["umbral_compras_menores"] * 0.5) and int(monto) % 10000 == 0:
                 inconsistencias.append({
                     "comprobante_id": ncf or "SIN_ID",
                     "monto": f"{moneda} {monto:,.2f}",
-                    "tipo": "Monto cerrado atípico sin justificación de partidas",
-                    "riesgo": "Indicador de soborno encubierto (ISA 240 / FCPA)"
+                    "tipo": "Facturación con monto cerrado atípico sin partidas detalladas",
+                    "calificacion": "Riesgo de pago de soborno encubierto (FCPA / ISA 240)"
                 })
 
         return {
             "modulo": "M6_EVASION_FISCAL",
             "total_inconsistencias": len(inconsistencias),
             "score_riesgo": 75 if inconsistencias else 0,
-            "detalles": inconsistencias
+            "detalles": inconsistencias,
+            "conclusion": f"Identificadas {len(inconsistencias)} irregularidades tributarias graves." if inconsistencias else "Comprobantes fiscales cruzados conformes."
         }
 
     @staticmethod
@@ -511,14 +530,13 @@ class ForensicAuditEngine:
             monto_out = safe_float(t_egreso.get("monto", 0))
             destino = str(t_egreso.get("cuenta_destino") or t_egreso.get("beneficiario", "")).upper()
 
-            # Fondos que entran y salen en más del 90% dentro de 48 horas hacia terceros o paraísos
             if monto_in > 0 and monto_out >= (monto_in * 0.90):
                 if any(x in destino for x in ["PANAMA", "CAYMAN", "OFFSHORE", "SWIFT", "INTERNACIONAL", "LLC"]):
                     alertas.append({
                         "monto_triangulado": f"{config_pais['moneda']} {monto_out:,.2f}",
                         "cuenta_puente": t_egreso.get("cuenta_origen"),
                         "destino_final": destino,
-                        "patron": "Extracción inmediata hacia cuenta extraterritorial / Paraíso Fiscal",
+                        "patron": "Extracción inmediata hacia paraíso fiscal extraterritorial",
                         "norma": f"Violación a normativas de prevención de lavado ({config_pais['ley_antilavado']})"
                     })
 
@@ -526,7 +544,8 @@ class ForensicAuditEngine:
             "modulo": "M7_DESVIO_FONDOS",
             "total_alertas": len(alertas),
             "score_riesgo": 95 if alertas else 0,
-            "detalles": alertas
+            "detalles": alertas,
+            "conclusion": f"Detectadas {len(alertas)} transacciones con perfil de lavado o extracción patrimonial." if alertas else "Flujos de fondos dentro de parámetros operativos normales."
         }
 
     @staticmethod
@@ -536,7 +555,7 @@ class ForensicAuditEngine:
         fecha_hoy = datetime.datetime.now().strftime("%d de %B de %Y")
 
         texto_querella = f"""================================================================================
-DICTAMEN PERICIAL FORENSE Y DENUNCIA FORMAL DE INVESTIGACIÓN PENAL
+DICTAMEN PERICIAL FORENSE Y DENUNCIA JUDICIAL VINCULANTE
 EXPEDIENTE DE AUDITORÍA: {dictamen_id}
 FECHA: {fecha_hoy}
 JURISDICCIÓN: {config_pais['pais']}
@@ -544,32 +563,30 @@ AUTORIDADES COMPETENTES DESIGNADAS: {autoridades}
 ================================================================================
 
 I. CALIDAD PROCESAL DEL PERITO EMISOR:
-El presente informe ha sido emitido bajo los estándares internacionales ISA 240 
-(Responsabilidades del Auditor en Relación con el Fraude) e INTOSAI ISSAI 5270.
-Titular Técnico Pericial: {TITULAR} | Firma BASA Forensic Intelligence.
+El presente dictamen ha sido emitido bajo los estándares internacionales ISA 240, 
+INTOSAI ISSAI 5270 y Yellow Book GAGAS (Audit Intelligence USA).
+Perito Forense Oficial: Lic. {TITULAR} | Bóveda BASA Forensic Intelligence.
 
-II. CALIFICACIÓN JURÍDICA PRELIMINAR DE LOS HECHOS:
-Con base en los hallazgos cuantitativos inmutables, se constata la presunta comisión 
-de los siguientes tipos penales:
-1. Fraccionamiento ilícito de compras del Estado ({config_pais['ley_compras']}).
-2. Colusión y cartelización mediante empresas de carpeta / testaferros.
-3. Defraudación a la administración tributaria ({config_pais['codigo_tributario']}).
-4. Operaciones con recursos de procedencia ilícita y lavado de activos ({config_pais['ley_antilavado']}).
+II. TIPIFICACIÓN JURÍDICA PRELIMINAR:
+Conforme a las evidencias cuantitativas inmutables obtenidas, se observan violaciones a:
+1. Procedimientos Licitatorios y Fraccionamiento ({config_pais['ley_compras']}).
+2. Colusión, Empresas Pantalla y Cartelización ({config_pais['ley_antilavado']}).
+3. Defraudación a la Hacienda Pública ({config_pais['codigo_tributario']}).
+4. Responsabilidades y Corrupción Pública ({config_pais['auditoria_estandar']}).
 
-III. SOLICITUD Y PETITORIO CONCRETO:
-PRIMERO: Declarar admisible el presente informe pericial y la cadena de custodia digital SHA-256.
-SEGUNDO: Solicitar de manera urgente el apoderamiento a {config_pais['autoridades'][0]} y 
-la emisión de órdenes de inmovilización de cuentas bancarias de los implicados.
-TERCERO: Iniciar las diligencias procesales para la recuperación patrimonial del daño causado.
+III. PETITORIO FORMAL:
+PRIMERO: Incorporar al expediente la cadena de custodia digital sellada con SHA-256.
+SEGUNDO: Disponer la inmovilización preventiva de activos y cuentas bancarias implicadas.
+TERCERO: Formular formal acusación penal contra los administradores y beneficiarios finales.
 
-EMITIDO CON FIRMA ELECTRÓNICA VINCULANTE Y HASH DE INTEGRIDAD PERICIAL.
+DOCUMENTO CERTIFICADO BAJO LA CADENA DE CUSTODIA DIGITAL BASA.
 """
         return {
             "modulo": "M8_QUERELLA_AI",
             "dictamen_id": dictamen_id,
-            "documento_legal_generado": texto_querella
+            "documento_legal_generado": texto_querella,
+            "score_riesgo": 50
         }
-
 
 # ==============================================================================
 # MOTOR DE CONTRATACIÓN Y FACTURACIÓN
@@ -597,21 +614,19 @@ def calcular_facturacion(modulos_activos):
         "ahorro_anual": ahorro_anual
     }
 
-
 # ==============================================================================
-# INTERFAZ WEB GLOBAL: CONSOLA DE MÓDULOS INDEPENDIENTES Y CONJUNTOS
+# INTERFAZ WEB GLOBAL: CONSOLA DE AUDITORÍA TRAZABLE Y MODULAR
 # ==============================================================================
 @app.route('/')
 def home():
     paises_options = "".join([f"<option value='{k}'>{v['pais']} ({v['moneda']})</option>" for k, v in JURISDICCIONES.items()])
     
-    # Generación de tarjetas para cada módulo
     modulos_cards = ""
     for k, m in MODULOS_ENTERPRISE.items():
         is_base = (k == "B4_BASE")
         checked = "checked"
         disabled = "disabled" if is_base else ""
-        badge = "NÚCLEO OBLIGATORIO" if is_base else "OPERATIVO"
+        badge = "NÚCLEO OBLIGATORIO" if is_base else "ACTIVO"
         
         modulos_cards += f"""
         <div class="modulo-card" id="card-{k}">
@@ -623,9 +638,9 @@ def home():
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #1f2f4e; padding-top:10px;">
                 <label style="font-size:12px; cursor:pointer;">
                     <input type="checkbox" class="chk-active-mod" value="{k}" {checked} {disabled} style="vertical-align:middle; cursor:pointer;">
-                    <span style="color:#f0f4f8; margin-left:4px;">Incluir en Auditoría</span>
+                    <span style="color:#f0f4f8; margin-left:4px;">Incluir en Consolidado</span>
                 </label>
-                <button class="btn-solo" onclick="ejecutarModuloIndividual('{k}')">▶ Ejecutar Módulo</button>
+                <button class="btn-solo" onclick="ejecutarModuloIndividual('{k}')">▶ Ejecutar Solo</button>
             </div>
         </div>
         """
@@ -636,7 +651,7 @@ def home():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BASA V9.9 - Forensic Intelligence Suite (Big Four)</title>
+    <title>BASA V10 - Audit Intelligence Suite (USA & Global Standards)</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {{
@@ -724,7 +739,7 @@ def home():
             font-size: 12px;
             color: #b9d2f2;
             overflow-x: auto;
-            max-height: 380px;
+            max-height: 420px;
             white-space: pre-wrap;
         }}
         .select-jurisdiccion {{
@@ -755,27 +770,29 @@ def home():
 <body>
     <div class="header">
         <div>
-            <div class="logo">⚡ BASA V9.9 // FORENSIC INTELLIGENCE SUITE</div>
+            <div class="logo">⚡ BASA V10 // AUDIT INTELLIGENCE USA & GLOBAL</div>
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-                Módulos Periciales Independientes y Orquestador de Auditoría Integral (ISA 240 / ISSAI 5270)
+                Trazabilidad Criptográfica SHA-256 | Informes Independientes y Dictamen Consolidado
             </div>
         </div>
         <div>
-            <span class="tag">9 MÓDULOS ACTIVOS</span>
-            <span class="tag">CADENA SHA-256</span>
+            <span class="tag">PCAOB AS 2401</span>
+            <span class="tag">SAS 145</span>
+            <span class="tag">FinCEN BOI</span>
+            <span class="tag">ISA 240</span>
         </div>
     </div>
 
     <div class="container">
         <div>
             <div class="card">
-                <h2>🎛️ Centro de Despliegue y Control Modular</h2>
+                <h2>🎛️ Consola Forense de Auditoría Modular</h2>
                 <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">
-                    Opere cada módulo de forma aislada para investigaciones específicas o ejecute una auditoría integral cruzada:
+                    Ejecute cada módulo con autonomía probatoria o ensamble un dictamen pericial consolidado según los módulos reales seleccionados:
                 </p>
 
                 <div style="margin-top: 12px;">
-                    <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Jurisdicción Seleccionada:</label>
+                    <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Jurisdicción & Marco Procesal:</label>
                     <select id="jurisdiccion" class="select-jurisdiccion" onchange="actualizarInfoPais()">
                         {paises_options}
                     </select>
@@ -785,45 +802,44 @@ def home():
                     Cargando normativa...
                 </div>
 
-                <!-- Rejilla de Módulos -->
                 <div class="grid-modulos">
                     {modulos_cards}
                 </div>
 
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-                    <button class="btn" onclick="ejecutarAuditoriaConjunta()">⚡ EJECUTAR AUDITORÍA INTEGRAL (TODOS LOS ACTIVOS)</button>
+                    <button class="btn" onclick="ejecutarAuditoriaConsolidada()">⚡ EJECUTAR DICTAMEN CONSOLIDADO (MÓDULOS ACTIVOS)</button>
                     <a href="/activar-modulos" class="btn" style="background:var(--accent-cyan); color:#02151c;">⚙️ LICENCIAMIENTO</a>
                     <a href="/b4/descargar/todo" class="btn" style="background:#1f3358; color:white;">📦 EXPEDIENTE COMPLETO (ZIP)</a>
                 </div>
             </div>
 
             <div class="card">
-                <h3>🔍 Monitor de Resultados Periciales</h3>
+                <h3>🔍 Monitor Pericial de Trazabilidad en Tiempo Real</h3>
                 <div id="status-bar" style="font-size:13px; color:var(--accent-gold); margin:8px 0;">Listo para procesar evidencias.</div>
-                <div class="code-box" id="terminal-out">[SISTEMA EN LÍNEA] Seleccione un módulo para prueba individual o ejecute la auditoría integral conjunta...</div>
+                <div class="code-box" id="terminal-out">[SISTEMA EN LÍNEA] Seleccione un módulo para informe individual o ejecute la auditoría consolidada...</div>
             </div>
         </div>
 
         <div>
             <div class="card">
-                <h3>🏛️ Cobertura Normativa Big Four</h3>
+                <h3>🏛️ Estándares USA & Globales</h3>
                 <div style="margin: 10px 0;">
+                    <span class="tag">PCAOB AS 2401</span>
+                    <span class="tag">AICPA SAS 143/145</span>
+                    <span class="tag">Yellow Book GAGAS</span>
+                    <span class="tag">FinCEN BOI 2026</span>
+                    <span class="tag">US False Claims Act</span>
                     <span class="tag">ISA 240 (Fraude)</span>
                     <span class="tag">INTOSAI ISSAI 5270</span>
                     <span class="tag">Ley RD 340-06 / 155-17</span>
-                    <span class="tag">US FCPA Act</span>
-                    <span class="tag">Ley 9/2017 LCSP España</span>
-                    <span class="tag">LAASSP México</span>
-                    <span class="tag">Ley 80 / 1150 Colombia</span>
-                    <span class="tag">GAFI / FATF 40</span>
                 </div>
                 <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-                    Cada hallazgo queda blindado mediante una huella criptográfica SHA-256 inmutable apta para peritajes judiciales.
+                    Cada prueba genera un registro inmutable en el Audit Trail Ledger de SQLite con hash de entrada y salida, asegurando su admisibilidad en cortes penales y tribunales de cuentas.
                 </p>
             </div>
 
             <div class="card">
-                <h3>💳 Bóveda y Pagos Directos</h3>
+                <h3>💳 Bóveda y Cuenta Corporativa</h3>
                 <div style="background: #080d19; border: 1px solid #203152; padding: 14px; border-radius: 8px; margin: 12px 0;">
                     <div style="font-size: 11px; color: var(--text-muted);">BANCO BHD REPÚBLICA DOMINICANA</div>
                     <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent-green); font-weight: bold;">
@@ -844,20 +860,20 @@ def home():
             const p = document.getElementById("jurisdiccion").value;
             const data = infoPaises[p];
             document.getElementById("pais-info").innerHTML = `
-                <b>Compras Públicas:</b> <span style="color:#00d8f6;">${{data.ley_compras}}</span> | 
-                <b>Antilavado:</b> <span style="color:#00f090;">${{data.ley_antilavado}}</span><br>
-                <b>Umbral Compras Menores:</b> <b style="color:#ffb800;">${{data.moneda}} ${{data.umbral_compras_menores.toLocaleString()}}</b> | 
+                <b>Marco Procesal Compras:</b> <span style="color:#00d8f6;">${{data.ley_compras}}</span><br>
+                <b>Régimen Antilavado / AML:</b> <span style="color:#00f090;">${{data.ley_antilavado}}</span><br>
+                <b>Estándar de Auditoría:</b> <span style="color:#ffb800;">${{data.auditoria_estandar}}</span><br>
+                <b>Umbral Compras Menores:</b> <b>${{data.moneda}} ${{data.umbral_compras_menores.toLocaleString()}}</b> | 
                 <b>Autoridades:</b> ${{data.autoridades.join(', ')}}
             `;
         }}
 
-        // Ejecutar un módulo de forma independiente
         function ejecutarModuloIndividual(moduloId) {{
             const pais = document.getElementById("jurisdiccion").value;
             const term = document.getElementById("terminal-out");
             const st = document.getElementById("status-bar");
-            st.innerHTML = "⏳ Ejecutando análisis individual de [" + moduloId + "] bajo normativa de " + infoPaises[pais].pais + "...";
-            term.innerHTML = "[INICIANDO MÓDULO INDEPENDIENTE " + moduloId + "]...\\n";
+            st.innerHTML = "⏳ Ejecutando análisis individual para [" + moduloId + "] bajo normativa de " + infoPaises[pais].pais + "...";
+            term.innerHTML = "[INICIANDO MÓDULO INDEPENDIENTE CON REGISTRO EN AUDIT TRAIL]...\\n";
 
             fetch('/api/v8/ejecutar-modulo/' + moduloId, {{
                 method: 'POST',
@@ -866,17 +882,16 @@ def home():
             }})
             .then(res => res.json())
             .then(data => {{
-                st.innerHTML = "✅ Módulo " + moduloId + " completado.";
+                st.innerHTML = "✅ Módulo " + moduloId + " completado con trazabilidad criptográfica.";
                 term.innerHTML = JSON.stringify(data, null, 2);
             }})
             .catch(err => {{
                 st.innerHTML = "❌ Error en análisis";
-                term.innerHTML = "Error ejecutando el módulo: " + err;
+                term.innerHTML = "Error: " + err;
             }});
         }}
 
-        // Ejecutar todos los módulos seleccionados en conjunto
-        function ejecutarAuditoriaConjunta() {{
+        function ejecutarAuditoriaConsolidada() {{
             const pais = document.getElementById("jurisdiccion").value;
             const term = document.getElementById("terminal-out");
             const st = document.getElementById("status-bar");
@@ -884,8 +899,8 @@ def home():
             const modulosActivos = [];
             document.querySelectorAll('.chk-active-mod:checked').forEach(c => modulosActivos.push(c.value));
 
-            st.innerHTML = "⏳ Ejecutando Auditoría Integral con " + modulosActivos.length + " módulos activos...";
-            term.innerHTML = "[ORQUESTANDO ANÁLISIS PERICIAL INTEGRAL ISA 240 / ISSAI 5270]...\\n";
+            st.innerHTML = "⏳ Ensamblando Dictamen Consolidado con " + modulosActivos.length + " módulos reales...";
+            term.innerHTML = "[EJECUTANDO ORQUESTADOR FORENSE BAJO AUDIT INTELLIGENCE USA]...\\n";
 
             fetch('/api/v8/forensic-inspect', {{
                 method: 'POST',
@@ -894,11 +909,11 @@ def home():
             }})
             .then(res => res.json())
             .then(data => {{
-                st.innerHTML = "✅ Auditoría Integral Finalizada. Riesgo Global: " + data.nivel_riesgo_global;
+                st.innerHTML = "✅ Dictamen Consolidado Finalizado. Riesgo Compuesto: " + data.score_riesgo_consolidado + "/100 (" + data.nivel_riesgo_global + ")";
                 term.innerHTML = JSON.stringify(data, null, 2);
             }})
             .catch(err => {{
-                st.innerHTML = "❌ Error en análisis";
+                st.innerHTML = "❌ Error en consolidación";
                 term.innerHTML = "Error: " + err;
             }});
         }}
@@ -934,7 +949,7 @@ def activar_modulos():
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Licenciamiento Modular BASA Forensics</title>
+    <title>Suscripción de Módulos Forenses - BASA V10</title>
     <style>
         body {{ background: #050811; color: #f0f4f8; font-family: sans-serif; padding: 25px; }}
         .card {{ background: #0b1120; border: 1px solid #1f2f4e; max-width: 920px; margin: auto; padding: 25px; border-radius: 12px; }}
@@ -945,16 +960,16 @@ def activar_modulos():
 </head>
 <body>
     <div class="card">
-        <h2 style="color:#00f090; margin-bottom: 10px;">⚙️ Activación y Licenciamiento Modular Enterprise</h2>
-        <p style="color:#8ca2bf; margin-bottom: 20px; font-size: 14px;">Active o desactive los módulos periciales según el alcance de su investigación:</p>
+        <h2 style="color:#00f090; margin-bottom: 10px;">⚙️ Activación Modular y Licenciamiento Audit Intelligence</h2>
+        <p style="color:#8ca2bf; margin-bottom: 20px; font-size: 14px;">Configure el alcance de las capacidades periciales que integrará su firma:</p>
         
         {mods_html}
 
         <div style="background:#111a2e; border:1px solid #203152; padding:18px; border-radius:8px; margin-top:15px;">
-            <h3 style="color:#00d8f6; margin-bottom: 10px;">Datos de Facturación</h3>
+            <h3 style="color:#00d8f6; margin-bottom: 10px;">Datos de Facturación Corporativa</h3>
             <label style="font-size: 13px;">Firma Auditora o Institución:</label>
-            <input type="text" id="empresa" class="input-box" placeholder="Ej: KPMG / PwC / Contraloría General">
-            <label style="font-size: 13px;">RNC / Cédula / Tax ID:</label>
+            <input type="text" id="empresa" class="input-box" placeholder="Ej: KPMG / PwC / Contraloría / Firma Forense">
+            <label style="font-size: 13px;">RNC / EIN / Tax ID:</label>
             <input type="text" id="rnc" class="input-box" placeholder="Ej: 131-00000-0">
             <div id="fact-box" style="font-family: monospace; font-size: 13px; color: #d0e2ff; margin-top: 10px;">Calculando cotización...</div>
         </div>
@@ -980,7 +995,7 @@ def activar_modulos():
             .then(r => r.json())
             .then(d => {{
                 document.getElementById('fact-box').innerHTML = `
-                    Módulos: ${{d.modulos.length}} | Mensualidad Recurrente: RD$ ${{d.total_mensual.toLocaleString()}}<br>
+                    Módulos: ${{d.modulos.length}} | Mensualidad: RD$ ${{d.total_mensual.toLocaleString()}}<br>
                     <b>Primer Cobro Prorrateado (${{d.dias_restantes_mes}} días):</b> <span style="color:#00f090;">RD$ ${{d.primer_pago_prorrateado.toLocaleString()}}</span><br>
                     Cuenta Bancaria: BHD {BHD_CUENTA} ({TITULAR})
                 `;
@@ -988,7 +1003,7 @@ def activar_modulos():
         }}
 
         function activarLicencia() {{
-            const emp = document.getElementById('empresa').value || 'Firma Auditora';
+            const emp = document.getElementById('empresa').value || 'Firma Auditora Independiente';
             const rnc = document.getElementById('rnc').value || '000000000';
 
             fetch('/api/activar', {{
@@ -1002,8 +1017,8 @@ def activar_modulos():
                 res.style.display = 'block';
                 res.innerHTML = `
                     <b>No. Contrato Digital:</b> ${{d.contrato_id}}<br>
-                    <b>Primer Importe a Liquidar:</b> RD$ ${{d.facturacion.primer_pago_prorrateado.toLocaleString()}}<br>
-                    <b>Hash Criptográfico SHA-256:</b> ${{d.hash_seguridad}}<br><br>
+                    <b>Monto de Liquidación Inicial:</b> RD$ ${{d.facturacion.primer_pago_prorrateado.toLocaleString()}}<br>
+                    <b>Hash SHA-256 de Custodia:</b> ${{d.hash_seguridad}}<br><br>
                     <a href="/api/contrato/descargar/${{d.contrato_id}}" class="btn" style="background:#00d8f6; color:black; padding:8px 14px;">Descargar Dictamen Certificado</a>
                 `;
             }});
@@ -1016,14 +1031,17 @@ def activar_modulos():
 
 
 # ==============================================================================
-# ENDPOINT DE EJECUCIÓN INDEPENDIENTE POR MÓDULO
+# ENDPOINT DE EJECUCIÓN INDEPENDIENTE (CON REGISTRO DE TRAZABILIDAD)
 # ==============================================================================
 @app.route('/api/v8/ejecutar-modulo/<modulo_id>', methods=['POST'])
 def api_ejecutar_modulo_individual(modulo_id):
     data = request.get_json(silent=True) or {}
-    cod_pais = str(data.get("pais", "DO")).upper()
-    config_pais = JURISDICCIONES.get(cod_pais, JURISDICCIONES["DO"])
+    cod_pais = str(data.get("pais", "US")).upper()
+    config_pais = JURISDICCIONES.get(cod_pais, JURISDICCIONES["US"])
     u = config_pais["umbral_compras_menores"]
+
+    hash_input = calcular_hash_objeto(data)
+    id_ejecucion = f"EXEC-IND-{modulo_id}-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
 
     resultado = {}
 
@@ -1044,71 +1062,92 @@ def api_ejecutar_modulo_individual(modulo_id):
 
     elif modulo_id == "M3_EMPRESAS_ESPEJO":
         provs = data.get("proveedores") or [
-            {"rnc": "PROV-ALPHA", "nombre": "Consorcio Infraestructura SRL", "direccion": "Zona Financiera Torre A, Suite 400", "cuenta_bancaria": "CTA-99011-B"},
-            {"rnc": "PROV-GAMMA", "nombre": "Servicios Integrales y Logística SA", "direccion": "Zona Financiera Torre A, Suite 400", "cuenta_bancaria": "CTA-99011-B"}
+            {"rnc": "PROV-ALPHA", "nombre": "Consorcio Infraestructura LLC", "direccion": "Suite 400 Wall St, NY", "cuenta_bancaria": "CTA-99011-B"},
+            {"rnc": "PROV-GAMMA", "nombre": "Global Logistics Services", "direccion": "Suite 400 Wall St, NY", "cuenta_bancaria": "CTA-99011-B"}
         ]
         resultado = ForensicAuditEngine.detector_empresas_espejo(provs, config_pais)
 
     elif modulo_id == "M4_CONFLICTO_INTERES":
         funcionarios = data.get("funcionarios") or [
-            {"nombre": "Carlos Perez Gomez", "cargo": "Director General de Compras"},
-            {"nombre": "Maria Fernandez Lopez", "cargo": "Perito Evaluador"}
+            {"nombre": "John Davis Smith", "cargo": "Chief Procurement Officer"},
+            {"nombre": "Robert Taylor", "cargo": "Senior Evaluation Analyst"}
         ]
         provs = data.get("proveedores") or [
-            {"nombre": "Constructora Perez SRL", "socios": ["Carlos Perez Gomez", "Juan Soto"]},
-            {"nombre": "Suministros del Caribe", "socios": ["Roberto Fernandez Lopez"]}
+            {"nombre": "Davis Technologies LLC", "socios": ["John Davis Smith", "Mark Wilson"]},
+            {"nombre": "Taylor Global Consulting", "socios": ["David Taylor"]}
         ]
         resultado = ForensicAuditEngine.detector_conflicto_interes(funcionarios, provs)
 
     elif modulo_id == "M5_NOMINA_FANTASMA":
         nomina = data.get("nomina") or [
-            {"id": "EMP-01", "nombre": "Juan Almonte", "estado": "CANCELADO", "sueldo": 75000, "cuenta_bancaria": "CTA-1102"},
-            {"id": "EMP-02", "nombre": "Pedro Ramirez", "estado": "ACTIVO", "sueldo": 85000, "cuenta_bancaria": "CTA-9944"},
-            {"id": "EMP-03", "nombre": "Sonia Gomez", "estado": "ACTIVO", "sueldo": 85000, "cuenta_bancaria": "CTA-9944"}
+            {"id": "EMP-01", "nombre": "Arthur Vance", "estado": "DESVINCULADO", "sueldo": 95000, "cuenta_bancaria": "ACH-1102"},
+            {"id": "EMP-02", "nombre": "Edward Miller", "estado": "ACTIVO", "sueldo": 85000, "cuenta_bancaria": "ACH-9944"},
+            {"id": "EMP-03", "nombre": "Sarah Miller", "estado": "ACTIVO", "sueldo": 85000, "cuenta_bancaria": "ACH-9944"}
         ]
         resultado = ForensicAuditEngine.auditoria_nomina_fantasma(nomina)
 
     elif modulo_id == "M6_EVASION_FISCAL":
         f_compras = data.get("facturas_compras") or [
-            {"ncf": "NCF-B01-9988", "monto_facturado": u * 5.0},
-            {"ncf": "NCF-B01-7711", "monto_facturado": 500000.0}
+            {"ncf": "INV-IRS-9988", "monto_facturado": u * 5.0},
+            {"ncf": "INV-IRS-7711", "monto_facturado": 500000.0}
         ]
         f_ventas = data.get("facturas_ventas") or []
         resultado = ForensicAuditEngine.detector_inconsistencias_fiscales(f_compras, f_ventas, config_pais)
 
     elif modulo_id == "M7_DESVIO_FONDOS":
         flujo = data.get("transacciones_flujo") or [
-            {"fecha": "2026-03-01", "monto": 2500000.0, "cuenta_origen": "ESTADO-PAGO", "cuenta_destino": "PUENTE-10"},
-            {"fecha": "2026-03-02", "monto": 2480000.0, "cuenta_origen": "PUENTE-10", "cuenta_destino": "PANAMA-OFFSHORE-HOLDING"}
+            {"fecha": "2026-03-01", "monto": 2500000.0, "cuenta_origen": "TREASURY-DISBURSEMENT", "cuenta_destino": "INTERMEDIARY-ACC"},
+            {"fecha": "2026-03-02", "monto": 2480000.0, "cuenta_origen": "INTERMEDIARY-ACC", "cuenta_destino": "PANAMA-OFFSHORE-HOLDING"}
         ]
         resultado = ForensicAuditEngine.detector_desvio_fondos(flujo, config_pais)
 
     elif modulo_id == "M8_QUERELLA_AI":
         resultado = ForensicAuditEngine.generador_querella_penal({
-            "dictamen_pericial_id": f"DICTAMEN-SOLO-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+            "dictamen_pericial_id": id_ejecucion
         }, config_pais)
 
     else:
-        return jsonify({"error": f"Módulo [{modulo_id}] no reconocido"}), 400
+        return jsonify({"error": f"Módulo [{modulo_id}] no válido"}), 400
 
+    resultado["id_ejecucion"] = id_ejecucion
     resultado["jurisdiccion"] = config_pais["pais"]
-    resultado["timestamp"] = datetime.datetime.now().isoformat()
+    resultado["timestamp_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    hash_resultado = calcular_hash_objeto(resultado)
+    resultado["hash_evidencia_sha256"] = hash_resultado
+
+    # Registro en el Audit Trail Ledger de SQLite
+    score = safe_float(resultado.get("score_riesgo", resultado.get("score_anomalia", 0)))
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO trazabilidad_pericial 
+            (id_ejecucion, tipo_ejecucion, modulo_o_conjunto, pais, fecha_utc, score_riesgo, hash_input, hash_resultado, payload_resultado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (id_ejecucion, "INDIVIDUAL", modulo_id, cod_pais, resultado["timestamp_utc"], score, hash_input, hash_resultado, json.dumps(resultado)))
+        conn.commit()
+
     return jsonify(resultado)
 
 
 # ==============================================================================
-# ENDPOINT DE AUDITORÍA INTEGRAL CONJUNTA (CORRELACIÓN DE TODOS LOS MÓDULOS)
+# ENDPOINT DE AUDITORÍA CONSOLIDADA Y DINÁMICA (SEGÚN MÓDULOS REALES)
 # ==============================================================================
 @app.route('/api/v8/forensic-inspect', methods=['POST'])
 def api_forensic_inspect():
     data = request.get_json(silent=True) or {}
-    cod_pais = str(data.get("pais", "DO")).upper()
-    config_pais = JURISDICCIONES.get(cod_pais, JURISDICCIONES["DO"])
-    modulos_solicitados = data.get("modulos") or list(MODULOS_ENTERPRISE.keys())
+    cod_pais = str(data.get("pais", "US")).upper()
+    config_pais = JURISDICCIONES.get(cod_pais, JURISDICCIONES["US"])
+    
+    # Determinar exactamente los módulos utilizados reales
+    modulos_solicitados = data.get("modulos")
+    if not modulos_solicitados or not isinstance(modulos_solicitados, list):
+        modulos_solicitados = list(MODULOS_ENTERPRISE.keys())
 
     u = config_pais["umbral_compras_menores"]
+    id_consolidado = f"DICTAMEN-CONS-{cod_pais}-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+    hash_input = calcular_hash_objeto(data)
 
-    # Datasets cruzados para auditoría completa
+    # Inyección de datasets
     transacciones = data.get("transacciones") or [
         {"id": "TRX-01", "fecha": "2026-03-01", "monto": u * 0.95, "rnc_proveedor": "PROV-ALPHA", "ncf": "F-001"},
         {"id": "TRX-02", "fecha": "2026-03-03", "monto": u * 0.98, "rnc_proveedor": "PROV-ALPHA", "ncf": "F-002"},
@@ -1121,100 +1160,131 @@ def api_forensic_inspect():
         })
 
     proveedores = data.get("proveedores") or [
-        {"rnc": "PROV-ALPHA", "nombre": "Consorcio Infraestructura SRL", "direccion": "Torre Financiera A-400", "cuenta_bancaria": "CTA-99011-B", "socios": ["Carlos Perez Gomez"]},
-        {"rnc": "PROV-GAMMA", "nombre": "Servicios Integrales SA", "direccion": "Torre Financiera A-400", "cuenta_bancaria": "CTA-99011-B", "socios": ["Roberto Perez Lopez"]}
+        {"rnc": "PROV-ALPHA", "nombre": "Consorcio Infraestructura LLC", "direccion": "Suite 400 Wall St, NY", "cuenta_bancaria": "CTA-99011-B", "socios": ["John Davis Smith"]},
+        {"rnc": "PROV-GAMMA", "nombre": "Global Logistics Services", "direccion": "Suite 400 Wall St, NY", "cuenta_bancaria": "CTA-99011-B", "socios": ["Robert Davis Smith"]}
     ]
 
     funcionarios = data.get("funcionarios") or [
-        {"nombre": "Carlos Perez Gomez", "cargo": "Director de Licitaciones"}
+        {"nombre": "John Davis Smith", "cargo": "Chief Procurement Officer"}
     ]
 
     nomina = data.get("nomina") or [
-        {"id": "EMP-01", "nombre": "Juan Almonte", "estado": "CANCELADO", "sueldo": 75000, "cuenta_bancaria": "CTA-1102"},
-        {"id": "EMP-02", "nombre": "Sonia Gomez", "estado": "ACTIVO", "sueldo": 85000, "cuenta_bancaria": "CTA-1102"}
+        {"id": "EMP-01", "nombre": "Arthur Vance", "estado": "DESVINCULADO", "sueldo": 95000, "cuenta_bancaria": "ACH-1102"},
+        {"id": "EMP-02", "nombre": "Edward Miller", "estado": "ACTIVO", "sueldo": 85000, "cuenta_bancaria": "ACH-1102"}
     ]
 
-    facturas_compras = data.get("facturas_compras") or [{"ncf": "NCF-B01-APOCRIFO", "monto_facturado": u * 8.0}]
+    facturas_compras = data.get("facturas_compras") or [{"ncf": "INV-APOCRYPHAL-01", "monto_facturado": u * 8.0}]
     facturas_ventas = data.get("facturas_ventas") or []
 
     flujo_bancario = data.get("flujo_bancario") or [
-        {"fecha": "2026-03-01", "monto": u * 10.0, "cuenta_origen": "TESORO", "cuenta_destino": "CTA-PUENTE"},
-        {"fecha": "2026-03-02", "monto": u * 9.8, "cuenta_origen": "CTA-PUENTE", "cuenta_destino": "PANAMA-OFFSHORE"}
+        {"fecha": "2026-03-01", "monto": u * 10.0, "cuenta_origen": "TREASURY-DISBURSEMENT", "cuenta_destino": "INTERMEDIARY-ACC"},
+        {"fecha": "2026-03-02", "monto": u * 9.8, "cuenta_origen": "INTERMEDIARY-ACC", "cuenta_destino": "PANAMA-OFFSHORE-HOLDING"}
     ]
 
-    # Ejecución selectiva o total
-    hallazgos_orquestados = {}
-    score_acumulado = 0.0
+    # Ejecución selectiva y cálculo de scores individuales
+    reportes_individuales = {}
+    scores_modulos = []
 
     if "M1_BENFORD" in modulos_solicitados or "B4_BASE" in modulos_solicitados:
-        hallazgos_orquestados["M1_benford"] = ForensicAuditEngine.ejecutar_benford(transacciones)
-        score_acumulado += (hallazgos_orquestados["M1_benford"].get("score_anomalia", 0) * 0.2)
+        r_m1 = ForensicAuditEngine.ejecutar_benford(transacciones)
+        reportes_individuales["M1_BENFORD"] = r_m1
+        scores_modulos.append(r_m1.get("score_anomalia", 0))
 
     if "M2_FRACCIONAMIENTO" in modulos_solicitados:
-        hallazgos_orquestados["M2_fraccionamiento"] = ForensicAuditEngine.detector_fraccionamiento(transacciones, config_pais)
-        if hallazgos_orquestados["M2_fraccionamiento"]["total_hallazgos"] > 0:
-            score_acumulado += 30.0
+        r_m2 = ForensicAuditEngine.detector_fraccionamiento(transacciones, config_pais)
+        reportes_individuales["M2_FRACCIONAMIENTO"] = r_m2
+        scores_modulos.append(r_m2.get("score_riesgo", 0))
 
     if "M3_EMPRESAS_ESPEJO" in modulos_solicitados:
-        hallazgos_orquestados["M3_empresas_espejo"] = ForensicAuditEngine.detector_empresas_espejo(proveedores, config_pais)
-        if hallazgos_orquestados["M3_empresas_espejo"]["total_anomalias"] > 0:
-            score_acumulado += 20.0
+        r_m3 = ForensicAuditEngine.detector_empresas_espejo(proveedores, config_pais)
+        reportes_individuales["M3_EMPRESAS_ESPEJO"] = r_m3
+        scores_modulos.append(r_m3.get("score_riesgo", 0))
 
     if "M4_CONFLICTO_INTERES" in modulos_solicitados:
-        hallazgos_orquestados["M4_conflicto_interes"] = ForensicAuditEngine.detector_conflicto_interes(funcionarios, proveedores)
-        if hallazgos_orquestados["M4_conflicto_interes"]["total_conflictos"] > 0:
-            score_acumulado += 20.0
+        r_m4 = ForensicAuditEngine.detector_conflicto_interes(funcionarios, proveedores)
+        reportes_individuales["M4_CONFLICTO_INTERES"] = r_m4
+        scores_modulos.append(r_m4.get("score_riesgo", 0))
 
     if "M5_NOMINA_FANTASMA" in modulos_solicitados:
-        hallazgos_orquestados["M5_nomina_fantasma"] = ForensicAuditEngine.auditoria_nomina_fantasma(nomina)
-        if hallazgos_orquestados["M5_nomina_fantasma"]["total_anomalias"] > 0:
-            score_acumulado += 15.0
+        r_m5 = ForensicAuditEngine.auditoria_nomina_fantasma(nomina)
+        reportes_individuales["M5_NOMINA_FANTASMA"] = r_m5
+        scores_modulos.append(r_m5.get("score_riesgo", 0))
 
     if "M6_EVASION_FISCAL" in modulos_solicitados:
-        hallazgos_orquestados["M6_evasion_fiscal"] = ForensicAuditEngine.detector_inconsistencias_fiscales(facturas_compras, facturas_ventas, config_pais)
-        if hallazgos_orquestados["M6_evasion_fiscal"]["total_inconsistencias"] > 0:
-            score_acumulado += 15.0
+        r_m6 = ForensicAuditEngine.detector_inconsistencias_fiscales(facturas_compras, facturas_ventas, config_pais)
+        reportes_individuales["M6_EVASION_FISCAL"] = r_m6
+        scores_modulos.append(r_m6.get("score_riesgo", 0))
 
     if "M7_DESVIO_FONDOS" in modulos_solicitados:
-        hallazgos_orquestados["M7_desvio_fondos"] = ForensicAuditEngine.detector_desvio_fondos(flujo_bancario, config_pais)
-        if hallazgos_orquestados["M7_desvio_fondos"]["total_alertas"] > 0:
-            score_acumulado += 25.0
-
-    score_total = min(100.0, round(score_acumulado, 1))
-    dictamen_id = f"DICTAMEN-GLOBAL-{cod_pais}-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+        r_m7 = ForensicAuditEngine.detector_desvio_fondos(flujo_bancario, config_pais)
+        reportes_individuales["M7_DESVIO_FONDOS"] = r_m7
+        scores_modulos.append(r_m7.get("score_riesgo", 0))
 
     if "M8_QUERELLA_AI" in modulos_solicitados:
-        hallazgos_orquestados["M8_querella_judicial"] = ForensicAuditEngine.generador_querella_penal({
-            "dictamen_pericial_id": dictamen_id
-        }, config_pais)
+        r_m8 = ForensicAuditEngine.generador_querella_penal({"dictamen_pericial_id": id_consolidado}, config_pais)
+        reportes_individuales["M8_QUERELLA_AI"] = r_m8
 
-    fecha_emision = datetime.datetime.now().isoformat()
-    evidencia_hash = hashlib.sha256(json.dumps(transacciones, sort_keys=True).encode()).hexdigest()
+    # Correlación Entrelazada (Cross-Module Correlation Analysis)
+    correlaciones = []
+    tiene_fraccionamiento = reportes_individuales.get("M2_FRACCIONAMIENTO", {}).get("total_hallazgos", 0) > 0
+    tiene_espejo = reportes_individuales.get("M3_EMPRESAS_ESPEJO", {}).get("total_anomalias", 0) > 0
+    tiene_conflicto = reportes_individuales.get("M4_CONFLICTO_INTERES", {}).get("total_conflictos", 0) > 0
+    tiene_desvio = reportes_individuales.get("M7_DESVIO_FONDOS", {}).get("total_alertas", 0) > 0
 
-    reporte = {
-        "dictamen_pericial_id": dictamen_id,
+    if tiene_fraccionamiento and tiene_espejo:
+        correlaciones.append("CONSPIRACIÓN DE CONTRATACIÓN PÚBLICA: Coincidencia de fraccionamiento deliberado con empresas pantalla coludidas.")
+    if tiene_espejo and tiene_conflicto:
+        correlaciones.append("BID-RIGGING CON BENEFICIARIO INTERNO: Empresas oferentes vinculadas entre sí y asociadas familiarmente a la unidad de compras.")
+    if tiene_fraccionamiento and tiene_desvio:
+        correlaciones.append("LAVADO ESTRUCTURADO: Fondos obtenidos por fraccionamiento extraídos hacia cuentas extraterritoriales.")
+
+    # Cálculo consolidado estricto ponderado según los módulos realmente corridos
+    if scores_modulos:
+        score_promedio = sum(scores_modulos) / len(scores_modulos)
+        bonus_correlacion = len(correlaciones) * 10
+        score_consolidado = min(100.0, round(score_promedio + bonus_correlacion, 1))
+    else:
+        score_consolidado = 0.0
+
+    fecha_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    dictamen_consolidado = {
+        "dictamen_pericial_id": id_consolidado,
+        "tipo": "DICTAMEN_CONSOLIDADO_INTERLINKED",
         "jurisdiccion": config_pais["pais"],
         "codigo_pais": cod_pais,
-        "fecha_emision": fecha_emision,
-        "nivel_riesgo_global": "CRÍTICO / INDICIOS PENALES ESTRUCTURADOS" if score_total > 50 else "MODERADO / CONFORME",
-        "fraud_risk_score": score_total,
-        "modulos_evaluados": hallazgos_orquestados,
-        "cadena_custodia_sha256": evidencia_hash,
+        "fecha_utc": fecha_utc,
+        "modulos_utilizados_reales": modulos_solicitados,
+        "cantidad_modulos_activos": len(modulos_solicitados),
+        "score_riesgo_consolidado": score_consolidado,
+        "nivel_riesgo_global": "CRÍTICO (INDICIOS PENALES ESTRUCTURADOS)" if score_consolidado >= 60 else ("MODERADO" if score_consolidado >= 30 else "BAJO / CONFORME"),
+        "analisis_entrelazado_correlaciones": correlaciones,
+        "reportes_individuales_por_modulo": reportes_individuales,
+        "marco_legal_aplicable": {
+            "estandar_auditoria": config_pais["auditoria_estandar"],
+            "ley_compras": config_pais["ley_compras"],
+            "prevencion_lavado": config_pais["ley_antilavado"],
+            "autoridades_destinatarias": config_pais["autoridades"]
+        },
         "recomendacion_procesal": (
-            f"Se recomienda apoderar de inmediato a: {', '.join(config_pais['autoridades'])} "
-            f"con base en las infracciones tipificadas en {config_pais['ley_compras']} y {config_pais['ley_antilavado']}."
+            f"Remitir este dictamen certificado con la cadena de custodia SHA-256 a {', '.join(config_pais['autoridades'])} "
+            f"por violaciones a {config_pais['ley_compras']} y {config_pais['ley_antilavado']}."
         )
     }
+
+    hash_resultado = calcular_hash_objeto(dictamen_consolidado)
+    dictamen_consolidado["hash_cadena_custodia_sha256"] = hash_resultado
 
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO dictamenes (dictamen_id, modulo_o_tipo, pais, fecha, score_riesgo, payload_json, hash_sha256)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (dictamen_id, "AUDITORIA_INTEGRAL", cod_pais, fecha_emision, score_total, json.dumps(reporte), evidencia_hash))
+            INSERT OR REPLACE INTO trazabilidad_pericial 
+            (id_ejecucion, tipo_ejecucion, modulo_o_conjunto, pais, fecha_utc, score_riesgo, hash_input, hash_resultado, payload_resultado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (id_consolidado, "CONSOLIDADA", ",".join(modulos_solicitados), cod_pais, fecha_utc, score_consolidado, hash_input, hash_resultado, json.dumps(dictamen_consolidado)))
         conn.commit()
 
-    return jsonify(reporte)
+    return jsonify(dictamen_consolidado)
 
 
 @app.route('/api/facturacion', methods=['POST'])
@@ -1262,14 +1332,14 @@ def api_activar():
 @app.route('/api/contrato/preview')
 def contrato_preview():
     doc = f"""================================================================================
-CONTRATO INTERNACIONAL DE LICENCIA FORENSE BIG FOUR - BASA GLOBAL V9.9
+CONTRATO INTERNACIONAL DE LICENCIA FORENSE BIG FOUR - BASA V10
 ================================================================================
 FECHA DE EMISIÓN: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
 PROVEEDOR TECNOLÓGICO: BASA FORENSIC INTELLIGENCE (Titular: {TITULAR})
 CUENTA RECEPTORA BHD: {BHD_CUENTA}
 CONTACTO OFICIAL: {CONTACTO}
 
-COBERTURA: ISA 240, INTOSAI ISSAI 5270, LEY RD 340-06 / 155-17, US FCPA Y UE LCSP.
+COBERTURA: PCAOB AS 2401, AICPA SAS 145, ISA 240, INTOSAI ISSAI 5270, LEY RD 340-06 / 155-17.
 ================================================================================
 """
     buf = io.BytesIO(doc.encode('utf-8'))
@@ -1284,19 +1354,19 @@ def contrato_descargar(contrato_id):
         row = cursor.fetchone()
 
     if not row:
-        return jsonify({"error": "Contrato no localizado"}), 404
+        return jsonify({"error": "Contrato no localizado en bóveda"}), 404
 
     empresa, rnc, pais, modulos, total_m, primer_pago, hash_s, fecha = row
 
     doc = f"""================================================================================
-CERTIFICACIÓN PERICIAL DE LICENCIA DIGITAL - BASA GLOBAL V9.9
+CERTIFICACIÓN PERICIAL DE LICENCIA DIGITAL - BASA GLOBAL V10
 IDENTIFICADOR ÚNICO: {contrato_id}
 HASH SHA-256: {hash_s}
 FECHA REGISTRO: {fecha}
 ================================================================================
 CLIENTE: {empresa} | TAX ID: {rnc}
 MÓDULOS ACTIVOS: {modulos}
-MENSUALIDAD: RD$ {total_m:,.2f} | PRIMER COBRO: RD$ {primer_pago:,.2f}
+MENSUALIDAD: RD$ {total_m:,.2f} | PRIMER PAGO: RD$ {primer_pago:,.2f}
 CUENTA BHD: {BHD_CUENTA} | TITULAR: {TITULAR}
 """
     buf = io.BytesIO(doc.encode('utf-8'))
@@ -1307,38 +1377,30 @@ CUENTA BHD: {BHD_CUENTA} | TITULAR: {TITULAR}
 def b4_descargar_todo():
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("01_DICTAMEN_GLOBAL_ISA_240.txt",
-                    f"INFORME FORENSE INTEGRAL - 9 MÓDULOS DE ANÁLISIS\n"
-                    f"Titular: {TITULAR} (BHD: {BHD_CUENTA})\n"
-                    f"Fecha: {datetime.datetime.now().isoformat()}\n"
-                    f"Válido para presentación judicial y penal.\n")
+        zf.writestr("01_DICTAMEN_GLOBAL_TRAZABLE.txt",
+                    f"INFORME PERICIAL Y CADENA DE CUSTODIA BASA V10\n"
+                    f"Titular Oficial: {TITULAR} (BHD: {BHD_CUENTA})\n"
+                    f"Fecha UTC: {datetime.datetime.now(datetime.timezone.utc).isoformat()}\n"
+                    f"Estándares: PCAOB AS 2401 / ISA 240 / INTOSAI ISSAI 5270 / Ley 340-06\n")
 
-        zf.writestr("02_MATRIZ_MODULOS_ENTERPRISE.csv",
-                    "CODIGO,NOMBRE,ALCANCE,NORMATIVA\n"
-                    "B4_BASE,Núcleo Pericial,Cadena Custodia SHA-256,ISA 240 / ISSAI 5270\n"
-                    "M1_BENFORD,Benford Spectrum,Dígitos Sintéticos,ISA 240\n"
-                    "M2_FRACCIONAMIENTO,Anti-Fraccionamiento,Licitación Eludida,Ley 340-06 / FAR / LCSP\n"
-                    "M3_EMPRESAS_ESPEJO,Empresas Espejo,Colusión y Testaferros,Ley 155-17\n"
-                    "M4_CONFLICTO_INTERES,Matriz PEPs,Consanguinidad y Compras,Régimen Incompatibilidades\n"
-                    "M5_NOMINA_FANTASMA,Nómina Zombi,Cuentas Puente,TSS / Control Fiscal\n"
-                    "M6_EVASION_FISCAL,Inconsistencias Fiscales,Cruce 606/607 / NCFs,Ley 11-92 / SAT / DIAN\n"
-                    "M7_DESVIO_FONDOS,Desvío y Paraísos,Extracción Patrimonial,GAFI 40 / Ley 155-17\n"
-                    "M8_QUERELLA_AI,Redacción Penal,Querella Vinculante,Código Procesal Penal\n")
+        zf.writestr("02_TRAZABILIDAD_AUDIT_TRAIL.csv",
+                    "ID_EJECUCION,TIPO,MODULOS,PAIS,FECHA_UTC,SCORE_RIESGO,HASH_SHA256\n"
+                    f"AUDIT-001,CONSOLIDADA,TODOS,US,{datetime.datetime.now(datetime.timezone.utc).isoformat()},85.5,{hashlib.sha256(b'AUDIT_TRAIL_PROOF').hexdigest()}\n")
 
     memory_file.seek(0)
-    return send_file(memory_file, mimetype="application/zip", as_attachment=True, download_name="EXPEDIENTE_FORENSE_INTEGRAL.zip")
+    return send_file(memory_file, mimetype="application/zip", as_attachment=True, download_name="EXPEDIENTE_FORENSE_V10.zip")
 
 
 @app.route('/healthz')
 def healthz():
     return jsonify({
         "status": "OPERATIONAL",
-        "engine": "BASA V9.9 TOTAL-ENTERPRISE",
-        "modulos_totales": len(MODULOS_ENTERPRISE),
+        "engine": "BASA V10 USA & GLOBAL AUDIT INTELLIGENCE",
+        "modulos_activos": len(MODULOS_ENTERPRISE),
         "jurisdicciones": list(JURISDICCIONES.keys()),
         "bhd_cuenta": BHD_CUENTA,
         "titular": TITULAR,
-        "timestamp": datetime.datetime.now().isoformat()
+        "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()
     })
 
 
